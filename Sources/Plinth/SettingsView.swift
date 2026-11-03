@@ -23,7 +23,6 @@ struct SettingsView: View {
                 Picker("On each knock, show", selection: $fish.floatMode) {
                     ForEach(FloatMode.allCases) { Text($0.title).tag($0) }
                 }
-                Toggle("Show merit count", isOn: $fish.showCount)
                 Picker("Size", selection: $fish.size) {
                     ForEach(FishSize.allCases) { Text($0.title).tag($0) }
                 }
@@ -50,10 +49,9 @@ struct SettingsView: View {
             }
             Section("Zen") {
                 QuoteView(quote: Zen.whyFish).frame(maxWidth: .infinity)
+                QuoteView(quote: Zen.noMerit).frame(maxWidth: .infinity)
                 QuoteView(quote: Zen.quoteOfTheDay()).frame(maxWidth: .infinity)
-                LabeledContent("Total merit", value: "\(fish.merit)")
-                Button("Let Go (Reset Merit to Zero)") { fish.letGo() }
-                Text("Merit isn't in the number. Resetting it is one more way of letting go.")
+                Text("Knocking earns no merit, and nothing is counted. Just knock.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

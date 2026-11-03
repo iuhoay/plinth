@@ -1,19 +1,20 @@
 # Plinth
 
-A tiny wooden fish that lives on your Mac's desktop. Click it to knock, hear a soft *tok*, and earn one point of merit (功德).
+A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
 
+Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth doesn't. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」: none at all. Your first knock gets the same answer, and no score is ever kept.
+
 ## Features
 
-- **Knock it.** Click the fish. A mallet swings, the fish reacts, and 功德 +1 ("merit +1") drifts up, or a single Zen character like 静 or 空.
+- **Knock it.** Click the fish. A mallet swings, the fish reacts, and a single Zen character like 静 or 空 drifts up (or nothing, if you prefer).
 - **Auto-knock.** Let it keep a steady rhythm (every 0.5 to 4 seconds), with an option to stop after 108 knocks, one full turn of a mala.
-- **A teaching every 108 knocks.** Every 108 merit points, the fish offers a line from the Zen classics, in the original Chinese.
+- **A teaching every 108 knocks.** Every 108 knocks, one turn of a mala, the fish offers a line from the Zen classics, in the original Chinese.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
 - **Skins.** Swap the fish for anything: a folder of sprite frames, or a single image.
-- **Let go.** Reset your merit to zero. The count was never the point.
 
-Everything on the fish itself (the merit count, the floating characters, the teachings) is in Chinese, as it would be in a temple. Menus and settings are in English.
+Everything on the fish itself (the floating characters and the teachings) is in Chinese, as it would be in a temple. Menus and settings are in English.
 
 Right-click the fish, or use the fish icon in the menu bar, for every option.
 

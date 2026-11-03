@@ -5,11 +5,10 @@ import ServiceManagement
 import UniformTypeIdentifiers
 
 enum FloatMode: String, CaseIterable, Identifiable {
-    case merit, zen, quiet
+    case zen, quiet
     var id: Self { self }
     var title: String {
         switch self {
-        case .merit: "Merit +1"
         case .zen: "Zen characters"
         case .quiet: "Nothing"
         }
@@ -67,7 +66,9 @@ final class Fish {
     @ObservationIgnored private var skinFileWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinRefresh: Task<Void, Never>?
 
-    private(set) var merit: Int { didSet { defaults.set(merit, forKey: "merit") } }
+    /// Knocks so far, kept only to mark each turn of the mala and never shown.
+    /// Knocking earns no merit: there is none to count.
+    private(set) var knocks: Int { didSet { defaults.set(knocks, forKey: "knocks") } }
     private(set) var strikes = 0
     /// Counts the moments the mallet meets the figure.
     private(set) var impacts = 0
@@ -84,7 +85,6 @@ final class Fish {
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
     var floatMode: FloatMode { didSet { defaults.set(floatMode.rawValue, forKey: "floatMode") } }
-    var showCount: Bool { didSet { defaults.set(showCount, forKey: "showCount") } }
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
@@ -118,17 +118,16 @@ final class Fish {
     private init() {
         let d = UserDefaults.standard
         d.register(defaults: [
-            "interval": 1.0, "volume": 0.8, "floatMode": FloatMode.merit.rawValue,
-            "showCount": true, "size": FishSize.medium.rawValue,
+            "interval": 1.0, "volume": 0.8, "floatMode": FloatMode.zen.rawValue,
+            "size": FishSize.medium.rawValue,
             "placement": Placement.floating.rawValue,
         ])
-        merit = d.integer(forKey: "merit")
+        knocks = d.integer(forKey: "knocks")
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
         stopAt108 = d.bool(forKey: "stopAt108")
         volume = d.double(forKey: "volume")
-        floatMode = FloatMode(rawValue: d.string(forKey: "floatMode") ?? "") ?? .merit
-        showCount = d.bool(forKey: "showCount")
+        floatMode = FloatMode(rawValue: d.string(forKey: "floatMode") ?? "") ?? .zen
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -145,9 +144,9 @@ final class Fish {
             try? await Task.sleep(for: .seconds(Self.impactDelay))
             impacts += 1
             sound.play(volume: Float(volume))
-            merit += 1
+            knocks += 1
             emitFloater()
-            if merit % 108 == 0 { reflect() }
+            reflect()
         }
     }
 
@@ -213,9 +212,6 @@ final class Fish {
         skinFileWatcher = skin.isEmpty ? nil : watch(url, [.write, .extend, .delete, .rename])
     }
 
-    /// Let go: the count was never the point.
-    func letGo() { merit = 0 }
-
     func show(_ quote: Quote, for seconds: Double = 8) {
         notice = quote
         Task {
@@ -228,7 +224,6 @@ final class Fish {
         let text: String
         switch floatMode {
         case .quiet: return
-        case .merit: text = "功德 +1"
         case .zen: text = Zen.words.randomElement()!
         }
         let floater = Floater(text: text, dx: .random(in: -26...26))
@@ -239,13 +234,14 @@ final class Fish {
         }
     }
 
-    /// Every 108 knocks (one turn of the mala) the fish offers a teaching.
-    /// The first time, it is Bodhidharma telling the emperor there is no merit.
+    /// The very first knock answers anyone hoping for "merit +1" the way
+    /// Bodhidharma answered Emperor Wu: there is no merit. After that, every
+    /// 108 knocks (one turn of the mala) the fish offers a teaching.
     private func reflect() {
         if !defaults.bool(forKey: "sawNoMerit") {
             defaults.set(true, forKey: "sawNoMerit")
             show(Zen.noMerit, for: 12)
-        } else {
+        } else if knocks % 108 == 0 {
             show(Zen.quotes.randomElement()!)
         }
     }

@@ -59,13 +59,6 @@ struct FishView: View {
             QuoteView(quote: quote).bubble()
         } else if hovering {
             QuoteView(quote: Zen.quoteOfTheDay()).bubble()
-        } else if fish.showCount {
-            Text("功德 \(fish.merit)")
-                .font(.system(size: 12, weight: .medium, design: .serif))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(.default, value: fish.merit)
-                .bubble()
         }
     }
 }
@@ -151,7 +144,6 @@ struct FishMenu: View {
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
         }
         Divider()
-        Text("Merit: \(fish.merit)")
         Button("Settings…") {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()

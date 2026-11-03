@@ -14,8 +14,8 @@ enum Zen {
         "禅", "悟", "息", "安", "闲", "放下", "当下", "自在", "随缘", "如是",
     ]
 
-    /// Bodhidharma's answer to Emperor Wu, shown the first time the merit
-    /// counter reaches 108: counting merit is itself what Zen lets go of.
+    /// Bodhidharma's answer to Emperor Wu, shown on the first knock:
+    /// counting merit is itself what Zen lets go of.
     static let noMerit = Quote(
         text: "梁武帝问：造寺度僧，有何功德？\n达摩答：并无功德。",
         source: "《景德传灯录》")
