@@ -4,14 +4,18 @@ import SwiftUI
 ///
 ///     idle.png    resting pose (required)
 ///     blink.png   shown for a moment every few seconds (optional)
-///     hit.png     shown right after the mallet lands (optional)
+///     hit.png     shown right after the mallet lands (optional; without it
+///                 the figure just gives a little under the mallet)
 ///     skin.json   {"strike": [x, y]}: where the mallet head's centre lands,
 ///                 as a fraction of the frame, y down (optional)
 ///
 /// A single image file in the skins folder also works, as an idle-only skin.
 /// The app composes the animation: idle and blink while waiting; on a knock the
-/// shared mallet swings onto `strike`, the frame switches to hit, an impact
-/// flash bursts and the sound plays, then it settles back to idle.
+/// shared mallet swings onto `strike`, the frame switches to hit (or the figure
+/// gives), an impact flash bursts and the sound plays, then it settles back.
+///
+/// The built-in wooden fish has no blink or hit frame on purpose: a fish never
+/// closes its eyes (鱼昼夜常醒), not even when struck.
 struct SkinPack {
     var idle: NSImage
     var blink: NSImage?
@@ -65,6 +69,16 @@ struct SpriteFish: View {
         let frame = hit ? (pack.hit ?? pack.idle) : blinking ? (pack.blink ?? pack.idle) : pack.idle
         ZStack {
             Image(nsImage: frame).resizable()
+                // Without a hit frame the figure gives a little under the
+                // mallet, like wood, and springs back.
+                .keyframeAnimator(initialValue: 0.0, trigger: pack.hit == nil ? fish.impacts : 0) { content, give in
+                    content.scaleEffect(x: 1 + 0.008 * give, y: 1 - 0.02 * give, anchor: .bottom)
+                } keyframes: { _ in
+                    KeyframeTrack {
+                        CubicKeyframe(1, duration: 0.03)
+                        SpringKeyframe(0, duration: 0.3, spring: .smooth)
+                    }
+                }
             impact
             mallet
         }
@@ -114,15 +128,18 @@ struct SpriteFish: View {
     }
 
     /// A neon burst just under the mallet head where it meets the figure.
+    /// Like the sound, it follows the quiet before the knock: a rushed knock
+    /// flashes small and dim, one after a long quiet opens fully.
     private var impact: some View {
         let size = side * 0.26
         let headRadius = side * Sprite.malletSize * 0.13
+        let bloom = fish.bloom
         return Image(nsImage: Sprite.impact)
             .resizable()
             .frame(width: size, height: size)
             .blendMode(.screen)
             .keyframeAnimator(initialValue: Flash(), trigger: fish.impacts) { content, v in
-                content.scaleEffect(v.scale).opacity(v.opacity)
+                content.scaleEffect(v.scale * (0.45 + 0.55 * bloom)).opacity(v.opacity * (0.5 + 0.5 * bloom))
             } keyframes: { _ in
                 KeyframeTrack(\.scale) {
                     LinearKeyframe(0.4, duration: 0.01)

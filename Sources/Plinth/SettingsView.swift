@@ -20,9 +20,6 @@ struct SettingsView: View {
                 LabeledContent("Volume") { Slider(value: $fish.volume, in: 0...1) }
             }
             Section("Display") {
-                Picker("On each knock, show", selection: $fish.floatMode) {
-                    ForEach(FloatMode.allCases) { Text($0.title).tag($0) }
-                }
                 Picker("Size", selection: $fish.size) {
                     ForEach(FishSize.allCases) { Text($0.title).tag($0) }
                 }
@@ -47,13 +44,8 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            Section("Zen") {
+            Section("Why a Fish") {
                 QuoteView(quote: Zen.whyFish).frame(maxWidth: .infinity)
-                QuoteView(quote: Zen.noMerit).frame(maxWidth: .infinity)
-                QuoteView(quote: Zen.quoteOfTheDay()).frame(maxWidth: .infinity)
-                Text("Knocking earns no merit, and nothing is counted. Just knock.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

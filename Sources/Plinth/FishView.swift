@@ -19,46 +19,30 @@ import SwiftUI
 
 struct FishView: View {
     @Environment(Fish.self) private var fish
-    @State private var hovering = false
 
     var body: some View {
         let side = fish.size.side
         VStack(spacing: 0) {
-            fish(side: side)
+            SpriteFish(pack: fish.pack, side: side)
                 .frame(width: side, height: side)
+                .onTapGesture { fish.knock() }
+                .gesture(DragGesture(minimumDistance: 3)
+                    .onChanged { _ in PanelMover.drag() }
+                    .onEnded { _ in PanelMover.end() })
+                .contextMenu { FishMenu() }
+                .help("Click to knock · Drag to move · Right-click for options")
             caption
                 .frame(maxHeight: .infinity, alignment: .top)
                 .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.4), value: fish.notice)
-        .animation(.easeInOut(duration: 0.3), value: hovering)
     }
 
-    private func fish(side: CGFloat) -> some View {
-        ZStack {
-            SpriteFish(pack: fish.pack, side: side)
-            ZStack {
-                ForEach(fish.floaters) { FloaterView(floater: $0) }
-            }
-            .frame(maxHeight: .infinity, alignment: .top)
-            .padding(.top, side * 0.3)
-            .allowsHitTesting(false)
-        }
-        .onHover { hovering = $0 }
-        .onTapGesture { fish.knock() }
-        .gesture(DragGesture(minimumDistance: 3)
-            .onChanged { _ in PanelMover.drag() }
-            .onEnded { _ in PanelMover.end() })
-        .contextMenu { FishMenu() }
-        .help("Click to knock · Drag to move · Right-click for options")
-    }
-
+    /// The fish's few words, when it has something to say. Otherwise nothing.
     @ViewBuilder private var caption: some View {
         if let quote = fish.notice {
             QuoteView(quote: quote).bubble()
-        } else if hovering {
-            QuoteView(quote: Zen.quoteOfTheDay()).bubble()
         }
     }
 }
@@ -85,22 +69,6 @@ private extension View {
             .padding(.vertical, 5)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 9))
             .transition(.opacity)
-    }
-}
-
-struct FloaterView: View {
-    let floater: Floater
-    @State private var risen = false
-
-    var body: some View {
-        Text(floater.text)
-            .font(.system(size: 15, weight: .semibold, design: .serif))
-            .foregroundStyle(Color(red: 0.75, green: 0.97, blue: 1.0))
-            .shadow(color: Color(red: 0.0, green: 0.8, blue: 1.0), radius: 4)
-            .shadow(color: .black.opacity(0.6), radius: 1)
-            .offset(x: floater.dx, y: risen ? -55 : 0)
-            .opacity(risen ? 0 : 1)
-            .onAppear { withAnimation(.easeOut(duration: 1.4)) { risen = true } }
     }
 }
 

@@ -4,17 +4,6 @@ import Observation
 import ServiceManagement
 import UniformTypeIdentifiers
 
-enum FloatMode: String, CaseIterable, Identifiable {
-    case zen, quiet
-    var id: Self { self }
-    var title: String {
-        switch self {
-        case .zen: "Zen characters"
-        case .quiet: "Nothing"
-        }
-    }
-}
-
 enum Placement: String, CaseIterable, Identifiable {
     case floating, desktop
     var id: Self { self }
@@ -45,12 +34,6 @@ enum FishSize: String, CaseIterable, Identifiable {
     }
 }
 
-struct Floater: Identifiable {
-    let id = UUID()
-    let text: String
-    let dx: CGFloat
-}
-
 @MainActor @Observable
 final class Fish {
     static let shared = Fish()
@@ -65,14 +48,15 @@ final class Fish {
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinFileWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinRefresh: Task<Void, Never>?
+    /// When the mallet last met the wood, on the system uptime clock.
+    @ObservationIgnored private var lastImpact = -Double.infinity
 
-    /// Knocks so far, kept only to mark each turn of the mala and never shown.
-    /// Knocking earns no merit: there is none to count.
-    private(set) var knocks: Int { didSet { defaults.set(knocks, forKey: "knocks") } }
     private(set) var strikes = 0
-    /// Counts the moments the mallet meets the figure.
+    /// Counts the moments the mallet meets the figure. Nothing else is
+    /// counted: knocking earns no merit.
     private(set) var impacts = 0
-    private(set) var floaters: [Floater] = []
+    /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
+    private(set) var bloom = 1.0
     private(set) var notice: Quote?
     private var autoRound = 0
 
@@ -84,7 +68,6 @@ final class Fish {
     }
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
-    var floatMode: FloatMode { didSet { defaults.set(floatMode.rawValue, forKey: "floatMode") } }
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
@@ -118,16 +101,13 @@ final class Fish {
     private init() {
         let d = UserDefaults.standard
         d.register(defaults: [
-            "interval": 1.0, "volume": 0.8, "floatMode": FloatMode.zen.rawValue,
-            "size": FishSize.medium.rawValue,
+            "interval": 1.0, "volume": 0.8, "size": FishSize.medium.rawValue,
             "placement": Placement.floating.rawValue,
         ])
-        knocks = d.integer(forKey: "knocks")
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
         stopAt108 = d.bool(forKey: "stopAt108")
         volume = d.double(forKey: "volume")
-        floatMode = FloatMode(rawValue: d.string(forKey: "floatMode") ?? "") ?? .zen
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -138,16 +118,45 @@ final class Fish {
         restartAuto()
     }
 
-    func knock() {
+    /// Knock once. Auto-knock passes `byHand: false`: only a person's knock
+    /// is ever answered.
+    func knock(byHand: Bool = true) {
         strikes += 1
         Task {
             try? await Task.sleep(for: .seconds(Self.impactDelay))
+            let now = ProcessInfo.processInfo.systemUptime
+            bloom = Self.bloom(afterSilence: now - lastImpact)
+            lastImpact = now
             impacts += 1
-            sound.play(volume: Float(volume))
-            knocks += 1
-            emitFloater()
-            reflect()
+            sound.play(volume: Float(volume), bloom: Float(bloom))
+            if byHand { speak() }
         }
+    }
+
+    /// The longer the quiet before a knock, the more fully it rings: none of
+    /// the hall after a rushed knock, all of it after twenty seconds of quiet.
+    static func bloom(afterSilence seconds: Double) -> Double {
+        let x = (log(seconds) - log(0.8)) / (log(20) - log(0.8))
+        let t = min(max(x, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
+    /// The fish has a few things to say and says each of them once: the next
+    /// line, on the first knock by hand each day. After the last, it only knocks.
+    private func speak() {
+        let said = defaults.integer(forKey: "said")
+        let today = Self.today()
+        guard said < Zen.sayings.count, defaults.string(forKey: "lastSaidDay") != today else { return }
+        defaults.set(said + 1, forKey: "said")
+        defaults.set(today, forKey: "lastSaidDay")
+        let saying = Zen.sayings[said]
+        // Long enough to read slowly.
+        show(saying, for: min(14, max(7, Double(saying.text.count) * 0.4)))
+    }
+
+    private static func today() -> String {
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
     }
 
     func refreshSkins() {
@@ -220,32 +229,6 @@ final class Fish {
         }
     }
 
-    private func emitFloater() {
-        let text: String
-        switch floatMode {
-        case .quiet: return
-        case .zen: text = Zen.words.randomElement()!
-        }
-        let floater = Floater(text: text, dx: .random(in: -26...26))
-        floaters.append(floater)
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            floaters.removeAll { $0.id == floater.id }
-        }
-    }
-
-    /// The very first knock answers anyone hoping for "merit +1" the way
-    /// Bodhidharma answered Emperor Wu: there is no merit. After that, every
-    /// 108 knocks (one turn of the mala) the fish offers a teaching.
-    private func reflect() {
-        if !defaults.bool(forKey: "sawNoMerit") {
-            defaults.set(true, forKey: "sawNoMerit")
-            show(Zen.noMerit, for: 12)
-        } else if knocks % 108 == 0 {
-            show(Zen.quotes.randomElement()!)
-        }
-    }
-
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
@@ -254,40 +237,63 @@ final class Fish {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.interval ?? 1))
                 guard let self, !Task.isCancelled else { return }
-                knock()
+                knock(byHand: false)
                 autoRound += 1
-                if stopAt108 && autoRound >= 108 {
-                    autoKnock = false
-                    show(Quote(text: "一百零八声已尽。\n且听余音，归于寂静。", source: "木鱼"))
-                }
+                // One turn of the mala, then quiet. The quiet says the rest.
+                if stopAt108 && autoRound >= 108 { autoKnock = false }
             }
         }
     }
 }
 
-/// A small pool of players so fast knocks overlap instead of cutting off.
+/// The knock and its hall. Each voice pairs a dry knock with the same knock's
+/// reverberation in a large wooden hall (`knockN-hall.wav`); a small pool of
+/// voices lets fast knocks overlap instead of cutting off.
 final class KnockSound {
-    private var players: [AVAudioPlayer] = []
+    private struct Voice {
+        let dry: AVAudioPlayer
+        let hall: AVAudioPlayer?
+        var isPlaying: Bool { dry.isPlaying || hall?.isPlaying == true }
+    }
+
+    private var voices: [Voice] = []
 
     init() {
         for i in 1...3 {
-            guard let url = Bundle.main.url(forResource: "knock\(i)", withExtension: "wav") else { continue }
-            for _ in 0..<3 {
-                guard let p = try? AVAudioPlayer(contentsOf: url) else { continue }
-                p.enableRate = true
-                p.prepareToPlay()
-                players.append(p)
+            guard let dryURL = Bundle.main.url(forResource: "knock\(i)", withExtension: "wav") else { continue }
+            let hallURL = Bundle.main.url(forResource: "knock\(i)-hall", withExtension: "wav")
+            for _ in 0..<4 {
+                guard let dry = Self.player(dryURL) else { continue }
+                voices.append(Voice(dry: dry, hall: hallURL.flatMap(Self.player)))
             }
         }
     }
 
-    func play(volume: Float) {
-        guard let p = players.filter({ !$0.isPlaying }).randomElement() ?? players.randomElement() else { return }
-        p.stop()
-        p.currentTime = 0
+    private static func player(_ url: URL) -> AVAudioPlayer? {
+        guard let p = try? AVAudioPlayer(contentsOf: url) else { return nil }
+        p.enableRate = true
+        p.prepareToPlay()
+        return p
+    }
+
+    /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
+    /// a rushed knock is also a little quieter.
+    func play(volume: Float, bloom: Float) {
+        guard let voice = voices.filter({ !$0.isPlaying }).randomElement() ?? voices.randomElement() else { return }
         // No two knocks are quite the same.
-        p.rate = .random(in: 0.97...1.03)
-        p.volume = volume * .random(in: 0.88...1.0)
-        p.play()
+        let rate = Float.random(in: 0.97...1.03)
+        let gain = volume * .random(in: 0.88...1.0)
+        start(voice.dry, rate: rate, volume: gain * (0.8 + 0.2 * bloom))
+        if let hall = voice.hall, bloom > 0.01 {
+            start(hall, rate: rate, volume: gain * bloom)
+        }
+    }
+
+    private func start(_ player: AVAudioPlayer, rate: Float, volume: Float) {
+        player.stop()
+        player.currentTime = 0
+        player.rate = rate
+        player.volume = volume
+        player.play()
     }
 }
