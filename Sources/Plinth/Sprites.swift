@@ -109,6 +109,8 @@ struct SpriteFish: View {
         let a = Sprite.strikeDegrees * .pi / 180
         let grip = CGPoint(x: pack.strike.x * side + reach * cos(a), y: pack.strike.y * side - reach * sin(a))
         let hit = -Sprite.strikeDegrees, rest = hit + Sprite.raiseDegrees
+        // A typed key goes straight down, with no lift, to land with the key.
+        let quick = fish.quickStrike
         return Image(nsImage: Sprite.mallet)
             .resizable()
             .frame(width: size, height: size)
@@ -117,8 +119,8 @@ struct SpriteFish: View {
             } keyframes: { _ in
                 KeyframeTrack {
                     // A small lift, the swing, then the rebound.
-                    CubicKeyframe(rest + 6, duration: 0.04)
-                    CubicKeyframe(hit, duration: Fish.impactDelay - 0.04)
+                    CubicKeyframe(quick ? hit : rest + 6, duration: quick ? Fish.quickImpactDelay / 2 : 0.04)
+                    CubicKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - 0.04)
                     SpringKeyframe(rest, duration: 0.45, spring: .bouncy)
                 }
             }

@@ -19,6 +19,12 @@ struct SettingsView: View {
                 Toggle("Stop auto-knock after 108 knocks", isOn: $fish.stopAt108)
                 LabeledContent("Volume") { Slider(value: $fish.volume, in: 0...1) }
             }
+            Section("Typing") {
+                Toggle("Knock as you type", isOn: $fish.knockAsYouType)
+                Text("Each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             Section("Display") {
                 Picker("Size", selection: $fish.size) {
                     ForEach(FishSize.allCases) { Text($0.title).tag($0) }

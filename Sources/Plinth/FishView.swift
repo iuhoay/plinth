@@ -102,6 +102,7 @@ struct FishMenu: View {
             Text("Steady · every 1 s").tag(1.0)
             Text("Fast · every 0.5 s").tag(0.5)
         }
+        Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
         Picker("Placement", selection: $fish.placement) {
             ForEach(Placement.allCases) { Text($0.title).tag($0) }
         }

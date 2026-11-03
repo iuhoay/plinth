@@ -40,9 +40,12 @@ final class Fish {
 
     /// Time from the start of the swing until the mallet meets the wood.
     static let impactDelay = 0.1
+    /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
+    static let quickImpactDelay = 0.03
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let sound = KnockSound()
+    @ObservationIgnored private let typing = TypingWatcher()
     @ObservationIgnored private var autoTask: Task<Void, Never>?
     @ObservationIgnored var onWindowChange: (() -> Void)?
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
@@ -52,6 +55,8 @@ final class Fish {
     @ObservationIgnored private var lastImpact = -Double.infinity
 
     private(set) var strikes = 0
+    /// Whether the latest swing is a quick one, for a typed key.
+    private(set) var quickStrike = false
     /// Counts the moments the mallet meets the figure. Nothing else is
     /// counted: knocking earns no merit.
     private(set) var impacts = 0
@@ -67,6 +72,10 @@ final class Fish {
         didSet { defaults.set(interval, forKey: "interval"); restartAuto() }
     }
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
+    /// Each key pressed in any app knocks once. Typed knocks are never answered.
+    var knockAsYouType: Bool {
+        didSet { defaults.set(knockAsYouType, forKey: "knockAsYouType"); watchTyping() }
+    }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
@@ -107,6 +116,7 @@ final class Fish {
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
         stopAt108 = d.bool(forKey: "stopAt108")
+        knockAsYouType = d.bool(forKey: "knockAsYouType")
         volume = d.double(forKey: "volume")
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
@@ -116,14 +126,17 @@ final class Fish {
         loadSkin()
         watchSkins()
         restartAuto()
+        typing.onPress = { [weak self] in self?.knock(byHand: false, quick: true) }
+        watchTyping()
     }
 
-    /// Knock once. Auto-knock passes `byHand: false`: only a person's knock
-    /// is ever answered.
-    func knock(byHand: Bool = true) {
+    /// Knock once. Auto-knock and typing pass `byHand: false`: only a knock on
+    /// the fish itself is ever answered. `quick` is the short swing for typing.
+    func knock(byHand: Bool = true, quick: Bool = false) {
+        quickStrike = quick
         strikes += 1
         Task {
-            try? await Task.sleep(for: .seconds(Self.impactDelay))
+            try? await Task.sleep(for: .seconds(quick ? Self.quickImpactDelay : Self.impactDelay))
             let now = ProcessInfo.processInfo.systemUptime
             bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
@@ -229,6 +242,10 @@ final class Fish {
         }
     }
 
+    private func watchTyping() {
+        if knockAsYouType { typing.start() } else { typing.stop() }
+    }
+
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
@@ -250,10 +267,15 @@ final class Fish {
 /// reverberation in a large wooden hall (`knockN-hall.wav`); a small pool of
 /// voices lets fast knocks overlap instead of cutting off.
 final class KnockSound {
-    private struct Voice {
+    private final class Voice {
         let dry: AVAudioPlayer
         let hall: AVAudioPlayer?
-        var isPlaying: Bool { dry.isPlaying || hall?.isPlaying == true }
+        var started = 0.0
+
+        init(dry: AVAudioPlayer, hall: AVAudioPlayer?) {
+            self.dry = dry
+            self.hall = hall
+        }
     }
 
     private var voices: [Voice] = []
@@ -279,12 +301,17 @@ final class KnockSound {
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
     /// a rushed knock is also a little quieter.
     func play(volume: Float, bloom: Float) {
-        guard let voice = voices.filter({ !$0.isPlaying }).randomElement() ?? voices.randomElement() else { return }
+        // A voice free for this knock (a rushed knock needs only the dry
+        // player), or else the one that started longest ago.
+        let ringsHall = bloom > 0.01
+        let free = voices.filter { !$0.dry.isPlaying && !(ringsHall && $0.hall?.isPlaying == true) }
+        guard let voice = free.randomElement() ?? voices.min(by: { $0.started < $1.started }) else { return }
+        voice.started = ProcessInfo.processInfo.systemUptime
         // No two knocks are quite the same.
         let rate = Float.random(in: 0.97...1.03)
         let gain = volume * .random(in: 0.88...1.0)
         start(voice.dry, rate: rate, volume: gain * (0.8 + 0.2 * bloom))
-        if let hall = voice.hall, bloom > 0.01 {
+        if let hall = voice.hall, ringsHall {
             start(hall, rate: rate, volume: gain * bloom)
         }
     }
