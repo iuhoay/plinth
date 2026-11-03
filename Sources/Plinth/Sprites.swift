@@ -1,32 +1,12 @@
 import SwiftUI
 
-/// A skin is a folder of square sprite frames plus a little metadata:
+/// A skin: a folder of square sprite frames (`idle.png`, and optionally
+/// `blink`, `hit`, `mallet.png`, `impact.png`) plus `skin.json` for its name,
+/// strike point and voice, or a single image as an idle-only skin.
 ///
-///     idle.png    resting pose (required)
-///     blink.png   shown for a moment every few seconds (optional)
-///     hit.png     shown right after the mallet lands (optional; without it
-///                 the figure just gives a little under the mallet)
-///     mallet.png  the skin's own mallet, laid out like the shared one: head
-///                 left, grip right, horizontal (optional)
-///     impact.png  the skin's own burst where the mallet lands, drawn as is
-///                 (optional; the shared neon burst is screen-blended, which
-///                 only brightens, so ink or dark colours need their own)
-///     skin.json   {"name": "…", "strike": [x, y], "voice": "jade"}: the
-///                 skin's display name, where the mallet head's centre lands
-///                 as a fraction of the frame, y down, and which knock it
-///                 uses (wood, lacquer, ink, cartoon, pixel, jade, bowl, key,
-///                 bamboo, stone, piston, crt).
-///                 voice is optional; without it, the wooden fish
-///
-/// Blink and hit may also be sequences, `blink-1.png`, `blink-2.png`, …: a
-/// blink plays its frames toward the last (eyes shut) and back again; a hit
-/// plays toward its last frame, holds, and settles back to idle. Every step
-/// cross-dissolves at the display's frame rate, so even one frame moves smoothly.
-///
-/// A single image file in the skins folder also works, as an idle-only skin.
-/// The app composes the animation: idle and blink while waiting; on a knock the
-/// shared mallet swings onto `strike`, the frame moves to hit (or the figure
-/// gives), an impact flash bursts and the skin's knock plays, then it settles back.
+/// docs/SKINS.md specifies the format and how it is drawn and animated. When
+/// this loader or `SpriteFish` changes what a skin can contain or how it looks,
+/// update that document (and docs/SKINS.zh-Hans.md) with it.
 ///
 /// The wooden fishes have no blink or hit frame on purpose: a fish never
 /// closes its eyes (鱼昼夜常醒), not even when struck.
