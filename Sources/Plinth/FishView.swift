@@ -72,16 +72,17 @@ private extension View {
     }
 }
 
-/// The wooden fish, or any image in the skins folder.
+/// The skins that ship with the app, then any in the skins folder.
 struct SkinPicker: View {
     @Environment(Fish.self) private var fish
 
     var body: some View {
         @Bindable var fish = fish
         Picker("Skin", selection: $fish.skin) {
-            Text("Wooden Fish").tag("")
-            ForEach(fish.skins, id: \.self) { name in
-                Text((name as NSString).deletingPathExtension).tag(name)
+            ForEach(SkinOption.builtIn) { Text($0.title).tag($0.id) }
+            if !fish.skins.isEmpty {
+                Divider()
+                ForEach(fish.skins) { Text($0.title).tag($0.id) }
             }
         }
         .pickerStyle(.inline)

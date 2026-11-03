@@ -38,8 +38,10 @@ enum FishSize: String, CaseIterable, Identifiable {
 final class Fish {
     static let shared = Fish()
 
-    /// Time from the start of the swing until the mallet meets the wood.
-    static let impactDelay = 0.1
+    /// Time from the start of the swing until the mallet meets the wood, and
+    /// how much of it the small lift before the swing takes.
+    static let impactDelay = 0.13
+    static let liftDuration = 0.05
     /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
     static let quickImpactDelay = 0.03
 
@@ -80,12 +82,15 @@ final class Fish {
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
-    /// Name of the skin folder or image in `skinsDirectory`, or "" for the built-in fish.
+    /// The worn skin's `SkinOption.id`: "" for the wooden fish.
     var skin: String {
         didSet { defaults.set(skin, forKey: "skin"); loadSkin() }
     }
-    private(set) var pack = SkinPack.builtIn
-    private(set) var skins: [String] = []
+    private(set) var pack = SkinOption.woodenFish.pack
+    /// The skins in `skinsDirectory`.
+    private(set) var skins: [SkinOption] = []
+    /// Every skin to choose from: those that ship with the app, then the user's.
+    var allSkins: [SkinOption] { SkinOption.builtIn + skins }
 
     static let skinsDirectory: URL = {
         let dir = URL.applicationSupportDirectory.appending(path: "Plinth/Skins")
@@ -174,7 +179,11 @@ final class Fish {
 
     func refreshSkins() {
         let files = (try? FileManager.default.contentsOfDirectory(atPath: Self.skinsDirectory.path)) ?? []
-        skins = files.filter { SkinPack.load(Self.skinsDirectory.appending(path: $0)) != nil }.sorted()
+        skins = files.sorted().compactMap { name in
+            SkinPack.load(Self.skinsDirectory.appending(path: name)).map {
+                SkinOption(id: name, title: $0.name ?? (name as NSString).deletingPathExtension, pack: $0)
+            }
+        }
     }
 
     /// Copy the images or skin folders the user picks into the skins folder
@@ -223,15 +232,15 @@ final class Fish {
             try? await Task.sleep(for: .seconds(0.5))
             guard !Task.isCancelled else { return }
             refreshSkins()
-            if !skin.isEmpty && !skins.contains(skin) { skin = "" } else { loadSkin() }
+            if !allSkins.contains(where: { $0.id == skin }) { skin = "" } else { loadSkin() }
         }
     }
 
     private func loadSkin() {
-        let url = Self.skinsDirectory.appending(path: skin)
-        pack = skin.isEmpty ? .builtIn : SkinPack.load(url) ?? .builtIn
+        pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
         skinFileWatcher?.cancel()
-        skinFileWatcher = skin.isEmpty ? nil : watch(url, [.write, .extend, .delete, .rename])
+        let isOwn = skins.contains { $0.id == skin }
+        skinFileWatcher = isOwn ? watch(Self.skinsDirectory.appending(path: skin), [.write, .extend, .delete, .rename]) : nil
     }
 
     func show(_ quote: Quote, for seconds: Double = 8) {

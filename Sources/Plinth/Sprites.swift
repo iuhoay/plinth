@@ -6,38 +6,77 @@ import SwiftUI
 ///     blink.png   shown for a moment every few seconds (optional)
 ///     hit.png     shown right after the mallet lands (optional; without it
 ///                 the figure just gives a little under the mallet)
-///     skin.json   {"strike": [x, y]}: where the mallet head's centre lands,
-///                 as a fraction of the frame, y down (optional)
+///     mallet.png  the skin's own mallet, laid out like the shared one: head
+///                 left, grip right, horizontal (optional)
+///     impact.png  the skin's own burst where the mallet lands, drawn as is
+///                 (optional; the shared neon burst is screen-blended, which
+///                 only brightens, so ink or dark colours need their own)
+///     skin.json   {"name": "…", "strike": [x, y]}: the skin's display name,
+///                 and where the mallet head's centre lands, as a fraction of
+///                 the frame, y down (optional)
+///
+/// Blink and hit may also be sequences, `blink-1.png`, `blink-2.png`, …: a
+/// blink plays its frames toward the last (eyes shut) and back again; a hit
+/// plays toward its last frame, holds, and settles back to idle. Every step
+/// cross-dissolves at the display's frame rate, so even one frame moves smoothly.
 ///
 /// A single image file in the skins folder also works, as an idle-only skin.
 /// The app composes the animation: idle and blink while waiting; on a knock the
-/// shared mallet swings onto `strike`, the frame switches to hit (or the figure
+/// shared mallet swings onto `strike`, the frame moves to hit (or the figure
 /// gives), an impact flash bursts and the sound plays, then it settles back.
 ///
-/// The built-in wooden fish has no blink or hit frame on purpose: a fish never
+/// The wooden fishes have no blink or hit frame on purpose: a fish never
 /// closes its eyes (鱼昼夜常醒), not even when struck.
 struct SkinPack {
+    var name: String?
     var idle: NSImage
-    var blink: NSImage?
-    var hit: NSImage?
+    var blink: [NSImage] = []
+    var hit: [NSImage] = []
+    var mallet: NSImage?
+    var impact: NSImage?
     var strike = CGPoint(x: 0.6, y: 0.3)
-
-    static let builtIn = load(Bundle.main.url(forResource: "wooden-fish", withExtension: nil, subdirectory: "Skins"))
-        ?? SkinPack(idle: NSImage())
 
     static func load(_ url: URL?) -> SkinPack? {
         guard let url else { return nil }
         if let image = NSImage(contentsOf: url) { return SkinPack(idle: image) }
         func frame(_ name: String) -> NSImage? { NSImage(contentsOf: url.appending(path: "\(name).png")) }
+        func frames(_ name: String) -> [NSImage] {
+            if let single = frame(name) { return [single] }
+            return Array((1...).lazy.map { frame("\(name)-\($0)") }.prefix { $0 != nil }.compactMap { $0 })
+        }
         guard let idle = frame("idle") else { return nil }
-        var pack = SkinPack(idle: idle, blink: frame("blink"), hit: frame("hit"))
-        struct Meta: Decodable { var strike: [Double] }
+        var pack = SkinPack(idle: idle, blink: frames("blink"), hit: frames("hit"),
+                            mallet: frame("mallet"), impact: frame("impact"))
+        struct Meta: Decodable { var name: String?; var strike: [Double]? }
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
-           let meta = try? JSONDecoder().decode(Meta.self, from: data), meta.strike.count == 2 {
-            pack.strike = CGPoint(x: meta.strike[0], y: meta.strike[1])
+           let meta = try? JSONDecoder().decode(Meta.self, from: data) {
+            pack.name = meta.name
+            if let s = meta.strike, s.count == 2 { pack.strike = CGPoint(x: s[0], y: s[1]) }
         }
         return pack
     }
+}
+
+/// A skin to choose: one that ships with the app, or one in the skins folder.
+struct SkinOption: Identifiable {
+    /// "" for the wooden fish, "builtin/<folder>" for the others that ship
+    /// with the app, or the file name in the skins folder.
+    let id: String
+    let title: String
+    let pack: SkinPack
+
+    /// The wooden fish first, then the rest in folder order.
+    static let builtIn: [SkinOption] = {
+        guard let dir = Bundle.main.url(forResource: "Skins", withExtension: nil) else { return [] }
+        let names = ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
+            .sorted { ($0 == "wooden-fish" ? 0 : 1, $0) < ($1 == "wooden-fish" ? 0 : 1, $1) }
+        return names.compactMap { name in
+            guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
+            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: pack.name ?? name, pack: pack)
+        }
+    }()
+
+    static let woodenFish = builtIn.first ?? SkinOption(id: "", title: "Wooden Fish", pack: SkinPack(idle: NSImage()))
 }
 
 /// Shared sprites, and where the mallet's head and grip sit in its image.
@@ -62,16 +101,34 @@ struct SpriteFish: View {
     let pack: SkinPack
     let side: CGFloat
     @Environment(Fish.self) private var fish
-    @State private var blinking = false
-    @State private var hit = false
+    /// The sequence playing, blink or hit; a new serial plays it again.
+    @State private var cue = Cue()
+    @State private var lastHit = -Double.infinity
+
+    private struct Cue: Equatable {
+        var hit = false
+        var serial = 0
+    }
 
     var body: some View {
-        let frame = hit ? (pack.hit ?? pack.idle) : blinking ? (pack.blink ?? pack.idle) : pack.idle
+        let frames = [pack.idle] + (cue.hit ? pack.hit : pack.blink)
+        let last = Double(frames.count - 1)
+        // Into the sequence, a moment on its last frame, and back to idle.
+        let (into, hold, back) = cue.hit ? (0.03 + 0.02 * last, 0.14, 0.2 + 0.05 * last) : (0.06 * last, 0.05, 0.08 * last)
         ZStack {
-            Image(nsImage: frame).resizable()
+            Color.clear
+                .keyframeAnimator(initialValue: 0.0, trigger: cue) { _, position in
+                    FrameBlend(frames: frames, position: position)
+                } keyframes: { _ in
+                    KeyframeTrack {
+                        LinearKeyframe(last, duration: into, timingCurve: .easeOut)
+                        LinearKeyframe(last, duration: hold)
+                        LinearKeyframe(0, duration: back, timingCurve: .easeInOut)
+                    }
+                }
                 // Without a hit frame the figure gives a little under the
                 // mallet, like wood, and springs back.
-                .keyframeAnimator(initialValue: 0.0, trigger: fish.impacts) { [gives = pack.hit == nil ? 1.0 : 0.0] content, give in
+                .keyframeAnimator(initialValue: 0.0, trigger: fish.impacts) { [gives = pack.hit.isEmpty ? 1.0 : 0.0] content, give in
                     content.scaleEffect(x: 1 + 0.008 * give * gives, y: 1 - 0.02 * give * gives, anchor: .bottom)
                 } keyframes: { _ in
                     KeyframeTrack {
@@ -83,20 +140,18 @@ struct SpriteFish: View {
             mallet
         }
         .frame(width: side, height: side)
-        .onChange(of: fish.impacts) { _, n in
-            hit = true
-            Task {
-                try? await Task.sleep(for: .seconds(0.25))
-                if fish.impacts == n { hit = false }
-            }
+        .onChange(of: fish.impacts) {
+            lastHit = ProcessInfo.processInfo.systemUptime
+            cue = Cue(hit: true, serial: cue.serial + 1)
         }
-        .task(id: pack.blink == nil) {
-            guard pack.blink != nil else { return }
+        .task(id: pack.blink.isEmpty) {
+            guard !pack.blink.isEmpty else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(.random(in: 3...6)))
-                blinking = true
-                try? await Task.sleep(for: .seconds(0.14))
-                blinking = false
+                // Never blink over a knock that has just landed.
+                if ProcessInfo.processInfo.systemUptime - lastHit > 0.8 {
+                    cue = Cue(hit: false, serial: cue.serial + 1)
+                }
             }
         }
     }
@@ -111,17 +166,20 @@ struct SpriteFish: View {
         let hit = -Sprite.strikeDegrees, rest = hit + Sprite.raiseDegrees
         // A typed key goes straight down, with no lift, to land with the key.
         let quick = fish.quickStrike
-        return Image(nsImage: Sprite.mallet)
+        return Image(nsImage: pack.mallet ?? Sprite.mallet)
             .resizable()
             .frame(width: size, height: size)
             .keyframeAnimator(initialValue: rest, trigger: fish.strikes) { content, angle in
                 content.rotationEffect(.degrees(angle), anchor: Sprite.malletGrip)
             } keyframes: { _ in
                 KeyframeTrack {
-                    // A small lift, the swing, then the rebound.
-                    CubicKeyframe(quick ? hit : rest + 6, duration: quick ? Fish.quickImpactDelay / 2 : 0.04)
-                    CubicKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - 0.04)
-                    SpringKeyframe(rest, duration: 0.45, spring: .bouncy)
+                    // A small lift that eases to a stop, the swing that
+                    // gathers speed into the wood, then the rebound.
+                    LinearKeyframe(quick ? hit : rest + 7, duration: quick ? Fish.quickImpactDelay / 2 : Fish.liftDuration,
+                                   timingCurve: .easeOut)
+                    LinearKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - Fish.liftDuration,
+                                   timingCurve: .easeIn)
+                    SpringKeyframe(rest, duration: 0.5, spring: .bouncy)
                 }
             }
             .position(x: grip.x + (0.5 - Sprite.malletGrip.x) * size,
@@ -136,10 +194,10 @@ struct SpriteFish: View {
         let size = side * 0.26
         let headRadius = side * Sprite.malletSize * 0.13
         let bloom = fish.bloom
-        return Image(nsImage: Sprite.impact)
+        return Image(nsImage: pack.impact ?? Sprite.impact)
             .resizable()
             .frame(width: size, height: size)
-            .blendMode(.screen)
+            .blendMode(pack.impact == nil ? .screen : .normal)
             .keyframeAnimator(initialValue: Flash(), trigger: fish.impacts) { content, v in
                 content.scaleEffect(v.scale * (0.45 + 0.55 * bloom)).opacity(v.opacity * (0.5 + 0.5 * bloom))
             } keyframes: { _ in
@@ -155,6 +213,24 @@ struct SpriteFish: View {
             }
             .position(x: pack.strike.x * side, y: pack.strike.y * side + headRadius)
             .allowsHitTesting(false)
+    }
+}
+
+/// A point along a frame sequence: whole positions show one frame, and in
+/// between the next frame dissolves in over the current one.
+private struct FrameBlend: View {
+    let frames: [NSImage]
+    let position: Double
+
+    var body: some View {
+        let p = min(max(position, 0), Double(frames.count - 1))
+        let i = Int(p)
+        ZStack {
+            Image(nsImage: frames[i]).resizable()
+            if i + 1 < frames.count {
+                Image(nsImage: frames[i + 1]).resizable().opacity(p - Double(i))
+            }
+        }
     }
 }
 

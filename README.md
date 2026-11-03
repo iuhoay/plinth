@@ -13,7 +13,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 - **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
-- **Skins.** Swap the fish for anything: a folder of sprite frames, or a single image.
+- **Skins.** Seven ship with the app, each with its own mallet and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a singing bowl, a pixel-art fish, a cartoon fish, and an ink-wash fish. Or swap in anything: a folder of sprite frames, or a single image.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings are in English.
 
@@ -58,16 +58,20 @@ my-skin/
 ├── idle.png    resting pose (required)
 ├── blink.png   shown for a moment every few seconds (optional)
 ├── hit.png     shown right after the mallet lands (optional)
-└── skin.json   where the mallet lands (optional)
+├── mallet.png  the skin's own mallet (optional)
+├── impact.png  the skin's own burst where the mallet lands (optional)
+└── skin.json   its name, and where the mallet lands (optional)
 ```
 
-Frames should be square with a transparent background. 512 × 512 works well. `skin.json` gives the point where the mallet's head lands, as fractions of the frame width and height, measured from the top-left corner:
+Blink and hit can also be short sequences: `blink-1.png`, `blink-2.png`, … A blink plays toward its last frame (eyes shut) and back; a hit plays toward its last frame, holds, and settles. Each step cross-fades at the display's frame rate, so even two or three frames move smoothly.
+
+Frames should be square with a transparent background. 512 × 512 works well. A skin's `mallet.png` replaces the shared [`mallet.png`](App/Resources/mallet.png) and should be laid out the same way: horizontal, head on the left, grip at the right edge. Its `impact.png` replaces the shared neon burst and is drawn as is, so it can be dark, like an ink splash. `skin.json` gives the point where the mallet's head lands, as fractions of the frame width and height, measured from the top-left corner:
 
 ```json
-{ "strike": [0.6, 0.3] }
+{ "name": "My Skin", "strike": [0.6, 0.3] }
 ```
 
-A figure without a hit frame gives a little under the mallet instead. The built-in wooden fish in [`App/Resources/Skins/wooden-fish`](App/Resources/Skins/wooden-fish) uses only `idle.png` and `skin.json`, on purpose: a fish never closes its eyes, not even when struck.
+A figure without a hit frame gives a little under the mallet instead. The built-in skins live in [`App/Resources/Skins`](App/Resources/Skins). The fishes have no blink or hit frame, on purpose: a fish never closes its eyes, not even when struck.
 
 ## Project layout
 
