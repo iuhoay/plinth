@@ -2,6 +2,8 @@
 
 A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
 
+![Plinth's seven built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, and a singing bowl](docs/skins.png)
+
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
 
 Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth doesn't. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」: none at all. Your first knock gets the same answer, and no score is ever kept.
@@ -79,7 +81,7 @@ A figure without a hit frame gives a little under the mallet instead. The built-
 Sources/Plinth/     SwiftUI + AppKit source
 App/                Info.plist, app icon, and bundled resources
 scripts/            build and disk-image scripts
-docs/               how releases are signed and published
+docs/               how releases are signed and published, and the README image
 .github/workflows/  the release workflow
 tools/              synthesizer for the knock and its hall, and the singing bowl's ripple (Python: NumPy, SciPy, Pillow)
 ```
