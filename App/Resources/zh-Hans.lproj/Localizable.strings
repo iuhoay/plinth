@@ -50,3 +50,6 @@
 /* Settings: Why a Fish */
 "Why a Fish" = "为何是鱼";
 "Knocking earns no merit." = "敲木鱼，不积功德。";
+
+/* Shortcuts: the Knock action */
+"Knocks once." = "敲一下。";

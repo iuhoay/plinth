@@ -47,6 +47,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
     }
 
+    /// `plinth://knock` knocks once, so scripts and other apps can knock.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.host() == "knock" {
+            Fish.shared.knock(byHand: false)
+        }
+    }
+
     private func panelSize() -> NSSize {
         let side = Fish.shared.size.side
         return NSSize(width: max(side, 250), height: side + 64)
