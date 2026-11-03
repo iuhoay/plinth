@@ -235,10 +235,11 @@ struct SpriteFish: View {
         let bloom = fish.bloom
         return Image(nsImage: pack.impact ?? Sprite.impact)
             .resizable()
-            .frame(width: size, height: size)
-            .blendMode(pack.impact == nil ? .screen : .normal)
             .keyframeAnimator(initialValue: Flash(), trigger: fish.impacts) { content, v in
-                content.scaleEffect(v.scale * (0.45 + 0.55 * bloom)).opacity(v.opacity * (0.5 + 0.5 * bloom))
+                // Grow the drawing bounds with the pulse, not just its pixels.
+                let diameter = size * v.scale * (0.45 + 0.55 * bloom)
+                content.frame(width: diameter, height: diameter)
+                    .opacity(v.opacity * (0.5 + 0.5 * bloom))
             } keyframes: { _ in
                 KeyframeTrack(\.scale) {
                     LinearKeyframe(0.4, duration: 0.01)
@@ -250,6 +251,7 @@ struct SpriteFish: View {
                     CubicKeyframe(0.0, duration: 0.25)
                 }
             }
+            .blendMode(pack.impact == nil ? .screen : .normal)
             .position(x: pack.strike.x * side, y: pack.strike.y * side + headRadius)
             .allowsHitTesting(false)
     }
