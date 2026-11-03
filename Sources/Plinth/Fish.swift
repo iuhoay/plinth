@@ -84,7 +84,13 @@ final class Fish {
     }
     /// The worn skin's `SkinOption.id`: "" for the wooden fish.
     var skin: String {
-        didSet { defaults.set(skin, forKey: "skin"); loadSkin() }
+        didSet {
+            defaults.set(skin, forKey: "skin")
+            // Only the worn skin's folder is watched, so read the skins folder
+            // afresh: another skin may have changed since the list was made.
+            refreshSkins()
+            loadSkin()
+        }
     }
     private(set) var pack = SkinOption.woodenFish.pack
     /// The worn skin, small enough for the menu bar.
