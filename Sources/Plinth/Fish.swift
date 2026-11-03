@@ -284,6 +284,10 @@ final class Fish {
 
 /// The worn skin's knock, synthesized, and its hall. A small pool of players
 /// lets fast knocks overlap instead of cutting off.
+///
+/// The engine runs only while a knock rings. A running engine holds the audio
+/// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
+@MainActor
 final class KnockSound {
     private struct Slot {
         let dry: AVAudioPlayerNode
@@ -291,10 +295,15 @@ final class KnockSound {
         var freeAt = 0.0
     }
 
+    /// How long the engine stays up after the last knock has rung out, so a
+    /// run of knocks doesn't start it again for each one.
+    private static let linger = 2.0
+
     private let engine = AVAudioEngine()
     private var slots: [Slot] = []
     private var cache: [KnockSynth.Variation] = []
     private var voice = ""
+    private var quiet: Task<Void, Never>?
     private let mono = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 1)!
     private let stereo = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 2)!
 
@@ -309,7 +318,6 @@ final class KnockSound {
             slots.append(Slot(dry: dry, hall: hall))
         }
         engine.prepare()
-        try? engine.start()
     }
 
     /// Wear this voice. Unknown names, and none, are the wooden fish.
@@ -323,8 +331,11 @@ final class KnockSound {
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
     /// a rushed knock is also a little quieter.
     func play(volume: Float, bloom: Float) {
-        if !engine.isRunning { try? engine.start() }
         guard !cache.isEmpty, !slots.isEmpty else { return }
+        // A player node raises an exception if played while its engine is down.
+        if !engine.isRunning {
+            do { try engine.start() } catch { return }
+        }
         let now = ProcessInfo.processInfo.systemUptime
         let index = slots.indices.filter { slots[$0].freeAt <= now }.randomElement()
             ?? slots.indices.min { slots[$0].freeAt < slots[$1].freeAt }!
@@ -343,6 +354,19 @@ final class KnockSound {
             slots[index].hall.stop()
         }
         slots[index].freeAt = until
+        pauseWhenQuiet()
+    }
+
+    /// Pause the engine once every knock has rung out, plus `linger`.
+    private func pauseWhenQuiet() {
+        quiet?.cancel()
+        let ringsUntil = slots.map(\.freeAt).max() ?? 0
+        let wait = ringsUntil + Self.linger - ProcessInfo.processInfo.systemUptime
+        quiet = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(wait, 0)))
+            guard !Task.isCancelled, let self else { return }
+            self.engine.pause()
+        }
     }
 
     private func start(_ node: AVAudioPlayerNode, _ buffer: AVAudioPCMBuffer, volume: Float) {
