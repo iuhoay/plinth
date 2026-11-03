@@ -81,7 +81,7 @@ App/                Info.plist, app icon, and bundled resources
 scripts/            build and disk-image scripts
 docs/               how releases are signed and published
 .github/workflows/  the release workflow
-tools/              synthesizer for the knock and its hall (Python, NumPy, SciPy)
+tools/              synthesizer for the knock and its hall, and the singing bowl's ripple (Python: NumPy, SciPy, Pillow)
 ```
 
 ## License
