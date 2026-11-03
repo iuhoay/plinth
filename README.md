@@ -17,7 +17,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings are in English.
 
-Right-click the fish, or use the fish icon in the menu bar, for every option.
+Right-click the fish, or use its icon in the menu bar (it wears the same skin), for every option.
 
 ## Download
 

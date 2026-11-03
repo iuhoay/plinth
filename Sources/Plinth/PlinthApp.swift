@@ -5,8 +5,10 @@ struct PlinthApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
-        MenuBarExtra("Plinth", systemImage: "fish") {
+        MenuBarExtra {
             FishMenu().environment(Fish.shared)
+        } label: {
+            MenuBarIcon().environment(Fish.shared)
         }
         Settings {
             SettingsView().environment(Fish.shared)

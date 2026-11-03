@@ -72,6 +72,15 @@ private extension View {
     }
 }
 
+/// The menu bar item shows the skin being worn.
+struct MenuBarIcon: View {
+    @Environment(Fish.self) private var fish
+
+    var body: some View {
+        Image(nsImage: fish.menuIcon).accessibilityLabel("Plinth")
+    }
+}
+
 /// The skins that ship with the app, then any in the skins folder.
 struct SkinPicker: View {
     @Environment(Fish.self) private var fish

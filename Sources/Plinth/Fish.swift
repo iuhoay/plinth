@@ -87,6 +87,8 @@ final class Fish {
         didSet { defaults.set(skin, forKey: "skin"); loadSkin() }
     }
     private(set) var pack = SkinOption.woodenFish.pack
+    /// The worn skin, small enough for the menu bar.
+    private(set) var menuIcon = SkinOption.woodenFish.pack.idle.menuBarIcon()
     /// The skins in `skinsDirectory`.
     private(set) var skins: [SkinOption] = []
     /// Every skin to choose from: those that ship with the app, then the user's.
@@ -238,6 +240,7 @@ final class Fish {
 
     private func loadSkin() {
         pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
+        menuIcon = pack.idle.menuBarIcon()
         skinFileWatcher?.cancel()
         let isOwn = skins.contains { $0.id == skin }
         skinFileWatcher = isOwn ? watch(Self.skinsDirectory.appending(path: skin), [.write, .extend, .delete, .rename]) : nil
