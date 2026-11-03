@@ -11,9 +11,12 @@ import SwiftUI
 ///     impact.png  the skin's own burst where the mallet lands, drawn as is
 ///                 (optional; the shared neon burst is screen-blended, which
 ///                 only brightens, so ink or dark colours need their own)
-///     skin.json   {"name": "…", "strike": [x, y]}: the skin's display name,
-///                 and where the mallet head's centre lands, as a fraction of
-///                 the frame, y down (optional)
+///     skin.json   {"name": "…", "strike": [x, y], "voice": "jade"}: the
+///                 skin's display name, where the mallet head's centre lands
+///                 as a fraction of the frame, y down, and which knock it
+///                 uses (wood, lacquer, ink, cartoon, pixel, jade, bowl, key,
+///                 bamboo, stone, piston, crt).
+///                 voice is optional; without it, the wooden fish
 ///
 /// Blink and hit may also be sequences, `blink-1.png`, `blink-2.png`, …: a
 /// blink plays its frames toward the last (eyes shut) and back again; a hit
@@ -23,7 +26,7 @@ import SwiftUI
 /// A single image file in the skins folder also works, as an idle-only skin.
 /// The app composes the animation: idle and blink while waiting; on a knock the
 /// shared mallet swings onto `strike`, the frame moves to hit (or the figure
-/// gives), an impact flash bursts and the sound plays, then it settles back.
+/// gives), an impact flash bursts and the skin's knock plays, then it settles back.
 ///
 /// The wooden fishes have no blink or hit frame on purpose: a fish never
 /// closes its eyes (鱼昼夜常醒), not even when struck.
@@ -34,6 +37,8 @@ struct SkinPack {
     var hit: [NSImage] = []
     var mallet: NSImage?
     var impact: NSImage?
+    /// A `KnockSynth` voice. Nil is the wooden fish.
+    var voice: String?
     var strike = CGPoint(x: 0.6, y: 0.3)
 
     static func load(_ url: URL?) -> SkinPack? {
@@ -47,10 +52,11 @@ struct SkinPack {
         guard let idle = frame("idle") else { return nil }
         var pack = SkinPack(idle: idle, blink: frames("blink"), hit: frames("hit"),
                             mallet: frame("mallet"), impact: frame("impact"))
-        struct Meta: Decodable { var name: String?; var strike: [Double]? }
+        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String? }
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
            let meta = try? JSONDecoder().decode(Meta.self, from: data) {
             pack.name = meta.name
+            pack.voice = meta.voice
             if let s = meta.strike, s.count == 2 { pack.strike = CGPoint(x: s[0], y: s[1]) }
         }
         return pack
