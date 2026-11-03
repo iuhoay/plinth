@@ -9,8 +9,8 @@ enum Placement: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .floating: "Above windows"
-        case .desktop: "On the desktop"
+        case .floating: String(localized: "Above windows")
+        case .desktop: String(localized: "On the desktop")
         }
     }
 }
@@ -20,9 +20,9 @@ enum FishSize: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
+        case .small: String(localized: "Small")
+        case .medium: String(localized: "Medium")
+        case .large: String(localized: "Large")
         }
     }
     var side: CGFloat {
@@ -202,7 +202,7 @@ final class Fish {
         panel.allowedContentTypes = [.image]
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.message = "Choose images, or skin folders that contain idle.png"
+        panel.message = String(localized: "Choose images, or skin folders that contain idle.png")
         guard panel.runModal() == .OK else { return }
         var added: [String] = []
         for url in panel.urls {

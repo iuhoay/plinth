@@ -1,0 +1,10 @@
+/* Names of the built-in skins, keyed by their folder in App/Resources/Skins.
+   In English each name comes from the skin's skin.json. */
+
+"wooden-fish" = "木鱼";
+"cartoon-fish" = "卡通鱼";
+"ink-fish" = "水墨鱼";
+"jade-fish" = "玉鱼";
+"pixel-fish" = "像素鱼";
+"red-lacquer" = "朱漆";
+"singing-bowl" = "铜磬";

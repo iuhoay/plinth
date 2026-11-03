@@ -45,7 +45,7 @@ private struct KnockingSettings: View {
                         } maximumValueLabel: {
                             Image(systemName: "tortoise").foregroundStyle(.secondary)
                         }
-                        Text(String(format: "%.1f s", fish.interval))
+                        Text("\(fish.interval, specifier: "%.1f") s")
                             .monospacedDigit()
                             .frame(width: 44, alignment: .trailing)
                     }

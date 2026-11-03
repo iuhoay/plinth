@@ -1,5 +1,7 @@
 # Plinth
 
+English · [简体中文](README.zh-Hans.md)
+
 A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
 
 ![Plinth's seven built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, and a singing bowl](docs/skins.png)
@@ -17,7 +19,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
 - **Skins.** Seven ship with the app, each with its own mallet and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a singing bowl, a pixel-art fish, a cartoon fish, and an ink-wash fish. Or swap in anything: a folder of sprite frames, or a single image.
 
-What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings are in English.
+What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
 
 Right-click the fish, or use its icon in the menu bar (it wears the same skin), for every option.
 
@@ -74,6 +76,10 @@ Frames should be square with a transparent background. 512 × 512 works well. A 
 ```
 
 A figure without a hit frame gives a little under the mallet instead. The built-in skins live in [`App/Resources/Skins`](App/Resources/Skins). The fishes have no blink or hit frame, on purpose: a fish never closes its eyes, not even when struck.
+
+## Languages
+
+The interface strings live in [`App/Resources/zh-Hans.lproj`](App/Resources/zh-Hans.lproj): `Localizable.strings` for the menus and settings, `Skins.strings` for the names of the built-in skins. To add a language, copy that folder to `<language>.lproj`, translate the values, and add the language to `CFBundleLocalizations` in [`App/Info.plist`](App/Info.plist).
 
 ## Project layout
 

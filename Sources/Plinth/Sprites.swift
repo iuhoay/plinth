@@ -97,18 +97,25 @@ struct SkinOption: Identifiable {
     let title: String
     let pack: SkinPack
 
-    /// The wooden fish first, then the rest in folder order.
+    /// The wooden fish first, then the rest in folder order. Their names come
+    /// from skin.json in English, and from Skins.strings, keyed by folder, in
+    /// other languages.
     static let builtIn: [SkinOption] = {
         guard let dir = Bundle.main.url(forResource: "Skins", withExtension: nil) else { return [] }
         let names = ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
             .sorted { ($0 == "wooden-fish" ? 0 : 1, $0) < ($1 == "wooden-fish" ? 0 : 1, $1) }
         return names.compactMap { name in
             guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
-            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: pack.name ?? name, pack: pack)
+            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
         }
     }()
 
-    static let woodenFish = builtIn.first ?? SkinOption(id: "", title: "Wooden Fish", pack: SkinPack(idle: NSImage()))
+    static let woodenFish = builtIn.first
+        ?? SkinOption(id: "", title: title("wooden-fish", "Wooden Fish"), pack: SkinPack(idle: NSImage()))
+
+    private static func title(_ folder: String, _ english: String) -> String {
+        Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")
+    }
 }
 
 /// Shared sprites, and where the mallet's head and grip sit in its image.
