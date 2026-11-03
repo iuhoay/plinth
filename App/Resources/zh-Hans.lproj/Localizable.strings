@@ -44,7 +44,7 @@
 "Built In" = "内置";
 "Your Skins" = "你的皮肤";
 "No skins of your own yet." = "还没有你自己的皮肤。";
-"A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name and where the mallet lands. A single image works too." = "皮肤是一个文件夹，必须有 idle.png。眨眼和被敲中的画面可以放 blink.png、hit.png，也可以是 blink-1.png、blink-2.png 这样的编号序列；还可以带自己的 mallet.png 和 impact.png，再用 skin.json 写上名字和锤子的落点。单独一张图片也能当皮肤。";
+"A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too." = "皮肤是一个文件夹，必须有 idle.png。眨眼和被敲中的画面可以放 blink.png、hit.png，也可以是 blink-1.png、blink-2.png 这样的编号序列；还可以带自己的 mallet.png 和 impact.png，再用 skin.json 写上名字、锤子的落点，以及敲击声：wood、lacquer、ink、cartoon、pixel、jade、bowl、key、bamboo、stone、piston、crt。单独一张图片也能当皮肤。";
 "Choose images, or skin folders that contain idle.png" = "选择图片，或包含 idle.png 的皮肤文件夹";
 
 /* Settings: Why a Fish */
