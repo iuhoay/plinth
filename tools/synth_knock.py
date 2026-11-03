@@ -5,7 +5,8 @@ quickly, plus a short mallet-contact noise burst. Each knock also gets a
 hall tail: the same knock heard in a large wooden hall, as the reverberation
 alone. The app mixes in more of the tail the longer the quiet before a knock.
 
-Output is original, released under CC0 along with the rest of this project.
+The sounds are original and released under CC0, like the project's other art
+and sounds (the code itself is MIT).
 
 Usage: python synth_knock.py <output_dir>
 """

@@ -71,8 +71,8 @@ struct SpriteFish: View {
             Image(nsImage: frame).resizable()
                 // Without a hit frame the figure gives a little under the
                 // mallet, like wood, and springs back.
-                .keyframeAnimator(initialValue: 0.0, trigger: pack.hit == nil ? fish.impacts : 0) { content, give in
-                    content.scaleEffect(x: 1 + 0.008 * give, y: 1 - 0.02 * give, anchor: .bottom)
+                .keyframeAnimator(initialValue: 0.0, trigger: fish.impacts) { [gives = pack.hit == nil ? 1.0 : 0.0] content, give in
+                    content.scaleEffect(x: 1 + 0.008 * give * gives, y: 1 - 0.02 * give * gives, anchor: .bottom)
                 } keyframes: { _ in
                     KeyframeTrack {
                         CubicKeyframe(1, duration: 0.03)
