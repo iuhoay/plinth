@@ -50,3 +50,9 @@
 /* Settings: Why a Fish */
 "Why a Fish" = "为何是鱼";
 "Knocking earns no merit." = "敲木鱼，不积功德。";
+
+/* Incense */
+"Light Incense" = "点一炷香";
+"%lld minutes" = "%lld 分钟";
+"Put Out the Incense" = "熄香";
+"Incense" = "香";
