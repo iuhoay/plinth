@@ -1,0 +1,105 @@
+name: Release
+
+# Push a tag like v1.2.0 to build Plinth-1.2.0.dmg, sign it with Developer ID,
+# notarize it, and publish it as a GitHub release. Run the workflow by hand
+# (Actions > Release > Run workflow) to only build the disk image.
+# docs/RELEASING.md lists the secrets it needs. Without them it still builds
+# an ad hoc signed image, kept in the run's artifacts, and publishes nothing.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dmg:
+    runs-on: macos-15
+    env:
+      CAN_SIGN: ${{ secrets.MACOS_CERTIFICATE_P12 != '' && secrets.NOTARY_API_KEY_P8 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set the version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "PLINTH_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          fi
+          echo "PLINTH_BUILD=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+
+      - name: Import the Developer ID certificate
+        if: env.CAN_SIGN == 'true'
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "$MACOS_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          # Apple's Developer ID intermediates, so codesign can build the chain.
+          for ca in DeveloperIDG2CA DeveloperIDCA; do
+            curl -fsSL "https://www.apple.com/certificateauthority/$ca.cer" -o "$RUNNER_TEMP/$ca.cer"
+            security import "$RUNNER_TEMP/$ca.cer" -k "$KEYCHAIN" || true
+          done
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          # Search the new keychain first, keeping the others.
+          KEYCHAINS=("$KEYCHAIN")
+          while IFS= read -r line; do
+            KEYCHAINS+=("$(sed -e 's/^ *"//' -e 's/"$//' <<<"$line")")
+          done < <(security list-keychains -d user)
+          security list-keychains -d user -s "${KEYCHAINS[@]}"
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::MACOS_CERTIFICATE_P12 holds no Developer ID Application identity"
+            exit 1
+          fi
+          echo "PLINTH_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Write the notarization key
+        if: env.CAN_SIGN == 'true'
+        env:
+          NOTARY_API_KEY_P8: ${{ secrets.NOTARY_API_KEY_P8 }}
+          NOTARY_API_KEY_ID: ${{ secrets.NOTARY_API_KEY_ID }}
+          NOTARY_API_ISSUER_ID: ${{ secrets.NOTARY_API_ISSUER_ID }}
+        run: |
+          printf '%s\n' "$NOTARY_API_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+          {
+            echo "PLINTH_NOTARY_KEY=$RUNNER_TEMP/notary.p8"
+            echo "PLINTH_NOTARY_KEY_ID=$NOTARY_API_KEY_ID"
+            echo "PLINTH_NOTARY_ISSUER=$NOTARY_API_ISSUER_ID"
+          } >> "$GITHUB_ENV"
+
+      - name: Build the disk image
+        run: ./scripts/make_dmg.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Plinth-dmg
+          path: build/Plinth-*.dmg
+          if-no-files-found: error
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v') && env.CAN_SIGN == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/Plinth-*.dmg --title "Plinth $PLINTH_VERSION" --generate-notes
+
+      - name: Explain the missing release
+        if: startsWith(github.ref, 'refs/tags/v') && env.CAN_SIGN != 'true'
+        run: echo "::warning::No signing secrets, so no release was published. The ad hoc signed disk image is in this run's artifacts."
+
+      - name: Clean up
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN:-}" ]; then security delete-keychain "$KEYCHAIN" || true; fi
+          rm -f "$RUNNER_TEMP/notary.p8"

@@ -19,6 +19,10 @@ What little the fish says is in the original Chinese, as you would hear it in a 
 
 Right-click the fish, or use the fish icon in the menu bar, for every option.
 
+## Download
+
+Get `Plinth-x.y.z.dmg` from [Releases](https://github.com/rubycatco/plinth/releases), open it, and drag Plinth into Applications. It runs on macOS 14 Sonoma or later. Or build it yourself, as below.
+
 ## Requirements
 
 - macOS 14 Sonoma or later
@@ -33,7 +37,7 @@ cd plinth
 open build/Plinth.app
 ```
 
-The script builds a universal binary (Apple silicon and Intel), assembles `build/Plinth.app`, and signs it ad hoc. To keep it, drag `build/Plinth.app` into `/Applications`.
+The script builds a universal binary (Apple silicon and Intel), assembles `build/Plinth.app`, and signs it ad hoc. To keep it, drag `build/Plinth.app` into `/Applications`. `./scripts/make_dmg.sh` packages it as a disk image; [docs/RELEASING.md](docs/RELEASING.md) covers signing, notarization, and releases.
 
 For a quick run during development, `swift run` works too, but the fish won't find its images and sounds outside the app bundle, so use the script to see the real thing.
 
@@ -70,7 +74,9 @@ A figure without a hit frame gives a little under the mallet instead. The built-
 ```
 Sources/Plinth/     SwiftUI + AppKit source
 App/                Info.plist, app icon, and bundled resources
-scripts/            build script
+scripts/            build and disk-image scripts
+docs/               how releases are signed and published
+.github/workflows/  the release workflow
 tools/              synthesizer for the knock and its hall (Python, NumPy, SciPy)
 ```
 
