@@ -36,8 +36,8 @@
 "The Fish" = "木鱼";
 "Volume" = "音量";
 "Knock as you type" = "打字时跟着敲";
-"Knock when it's time to pause" = "打字久了，敲一下叫你停停";
-"After half an hour of typing with no three-minute rest, the fish knocks once. Stop, and take three breaths; typed knocks keep quiet for them. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼就敲一下。停下来，呼吸三次；这期间打字不敲。不计数，也不记录。";
+"Knock after long typing" = "打字久了，敲一下";
+"After half an hour of typing with no three-minute rest, the fish falls quiet, then knocks once and lets it ring. Typed knocks and auto-knock keep quiet a few breaths. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼静一静，敲一下，余音放尽。打字敲击和自动敲击静几息。不计数，也不记录。";
 "Knock on its own" = "让它自己敲";
 "Every" = "每隔";
 "%.1f s" = "%.1f 秒";

@@ -99,8 +99,9 @@ final class Fish {
     static let callBeat = 1.6
     static let callLength = callBeat * 3 + 2
     /// The bell: after this long at the keyboard with no rest of `rest`, typed
-    /// knocks fall quiet, and after `bellQuiet` one full knock, set apart from
-    /// them as a hall's signal is; they keep quiet `breaths` more, about three breaths.
+    /// knocks and auto-knock fall quiet, and after `bellQuiet` one knock rings
+    /// in full, set apart from them as a hall's signal is; they keep quiet
+    /// `breaths` more, about three breaths.
     static let bellAfter = 30.0 * 60
     static let rest = 3.0 * 60
     static let bellQuiet = 3.0
@@ -150,6 +151,8 @@ final class Fish {
     @ObservationIgnored private var typingSince = 0.0
     /// Until when typed knocks keep quiet, after the bell.
     @ObservationIgnored private var hushUntil = 0.0
+    /// The bell's quiet, its knock, and the breaths after it. Auto-knock waits.
+    @ObservationIgnored private var bellTask: Task<Void, Never>?
     /// The screens have slept for `darkFor`, and auto-knock rests until they
     /// wake. `restSoon` waits for that, while they sleep.
     @ObservationIgnored private var resting = false
@@ -290,18 +293,19 @@ final class Fish {
     /// the fish itself is ever answered. `quick` is the short swing for typing.
     /// `at` is where a click landed across the fish, from 0 at its left edge
     /// to 1 at its right. A `preview`, to hear a setting, always sounds and is
-    /// never answered.
-    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false) {
+    /// never answered. A `full` knock rings as fully as after a long quiet,
+    /// however lately the fish was knocked.
+    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
         // While the fish calls you back, other knocks keep quiet, so the call
         // is heard. A knock by hand, or a setting changed, means you are here,
         // and the call has done its work.
         if callTask != nil {
             if byHand || preview { endCall() } else { return }
         }
-        strike(byHand: byHand, quick: quick, at: x, preview: preview)
+        strike(byHand: byHand, quick: quick, at: x, preview: preview, full: full)
     }
 
-    private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false) {
+    private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
         swing = Swing(serial: swing.serial + 1, quick: quick)
         let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
@@ -317,7 +321,7 @@ final class Fish {
             guard !Task.isCancelled else { return }
             let deep = (press?.stage ?? 0) >= 2
             let (force, place) = touch(byHand: byHand, quick: quick, at: x,
-                                       silence: ProcessInfo.processInfo.systemUptime + delay - feel - lastImpact)
+                                       silence: full ? .infinity : ProcessInfo.processInfo.systemUptime + delay - feel - lastImpact)
             // The knock is made while the mallet is in the air.
             let knock = sound.synthesize(force: force, place: place)
             try? await Task.sleep(for: .seconds(delay - feel))
@@ -325,7 +329,7 @@ final class Fish {
             if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
             let now = ProcessInfo.processInfo.systemUptime
-            bloom = Self.bloom(afterSilence: now - lastImpact)
+            bloom = full ? 1 : Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
             if audible {
@@ -633,13 +637,21 @@ final class Fish {
         if now - lastTyped > Self.rest { typingSince = now }
         lastTyped = now
         // A call already has your ear; the bell waits for the next key after it.
-        if bell && callTask == nil && now - typingSince >= Self.bellAfter {
+        if bell && callTask == nil && bellTask == nil && now - typingSince >= Self.bellAfter {
             typingSince = now
             hushUntil = now + Self.bellQuiet + Self.breaths
-            // A quiet first, so the bell isn't lost among typed knocks.
-            Task { [weak self] in
+            autoTask?.cancel()
+            autoTask = nil
+            // A quiet first, so the bell isn't lost among other knocks, and
+            // then it rings in full, as the hall's signal it is.
+            bellTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(Self.bellQuiet))
-                self?.knock(byHand: false)
+                guard let self, !Task.isCancelled else { return }
+                if bell && callTask == nil { strike(byHand: false, full: true) }
+                try? await Task.sleep(for: .seconds(Self.breaths))
+                guard !Task.isCancelled else { return }
+                bellTask = nil
+                restartAuto()
             }
         } else if knockAsYouType && now >= hushUntil {
             knock(byHand: false, quick: true)
@@ -672,7 +684,7 @@ final class Fish {
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
-        guard autoKnock, callTask == nil, !resting else { return }
+        guard autoKnock, callTask == nil, bellTask == nil, !resting else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }

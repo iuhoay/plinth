@@ -68,7 +68,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// An unseen fish sits nowhere, so its knock comes from straight ahead.
     private func placeSound() {
+        guard Fish.shared.placement != .unseen else { return Fish.shared.heard(at: 0.5, 0.5) }
         guard let screen = panel.screen ?? NSScreen.main else { return }
         Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width,
                           (panel.frame.midY - screen.frame.minY) / screen.frame.height)
@@ -143,5 +145,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .desktop: NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
         }
         if Fish.shared.placement == .unseen { panel.orderOut(nil) } else { panel.orderFrontRegardless() }
+        placeSound()
     }
 }
