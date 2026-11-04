@@ -59,7 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.keepOnScreen(animated: false) }
         }
-        panel.orderFrontRegardless()
         placeSound()
         Updates.shared.start()
         if !atLaunch.isEmpty {
@@ -140,8 +139,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.setFrame(NSRect(x: old.midX - size.width / 2, y: old.minY,
                               width: size.width, height: size.height), display: true)
         panel.level = switch Fish.shared.placement {
-        case .floating: .floating
+        case .floating, .unseen: .floating
         case .desktop: NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
         }
+        if Fish.shared.placement == .unseen { panel.orderOut(nil) } else { panel.orderFrontRegardless() }
     }
 }

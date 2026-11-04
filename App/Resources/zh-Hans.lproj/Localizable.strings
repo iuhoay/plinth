@@ -5,6 +5,7 @@
 "Knock" = "敲一下";
 "Auto-Knock" = "自动敲击";
 "Pace" = "节奏";
+"With the breath · every 6 s" = "随息 · 每 6 秒";
 "Slow · every 2 s" = "慢 · 每 2 秒";
 "Moderate · every 1 s" = "中 · 每 1 秒";
 "Every %.1f s" = "每 %.1f 秒";
@@ -13,6 +14,7 @@
 "Placement" = "位置";
 "Above windows" = "浮在窗口上方";
 "On the desktop" = "放在桌面上";
+"Heard, not seen" = "只闻其声";
 "Skin" = "皮肤";
 "Add Skins…" = "添加皮肤…";
 "Open Skins Folder" = "打开皮肤文件夹";
@@ -34,6 +36,8 @@
 "The Fish" = "木鱼";
 "Volume" = "音量";
 "Knock as you type" = "打字时跟着敲";
+"Knock when it's time to pause" = "打字久了，敲一下叫你停停";
+"After half an hour of typing with no three-minute rest, the fish knocks once. Stop, and take three breaths; typed knocks keep quiet for them. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼就敲一下。停下来，呼吸三次；这期间打字不敲。不计数，也不记录。";
 "Knock on its own" = "让它自己敲";
 "Every" = "每隔";
 "%.1f s" = "%.1f 秒";

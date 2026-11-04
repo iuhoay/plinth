@@ -64,11 +64,11 @@ private struct KnockingSettings: View {
                     LabeledContent("Every") {
                         HStack {
                             // Even steps in proportion, not in seconds: from 0.4 s to 0.8 s
-                            // is as far as from 2 s to 4 s. Tenths of a second.
+                            // is as far as from 4 s to 8 s, a slow breath. Tenths of a second.
                             Slider(value: Binding(get: { log(fish.interval) }, set: {
                                 let seconds = (exp($0) * 10).rounded() / 10
                                 if seconds != fish.interval { fish.interval = seconds }
-                            }), in: log(0.4)...log(4)) {
+                            }), in: log(0.4)...log(8)) {
                                 EmptyView()
                             } minimumValueLabel: {
                                 Image(systemName: "hare").foregroundStyle(.secondary)
@@ -94,6 +94,7 @@ private struct KnockingSettings: View {
             }
             Section {
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
+                Toggle("Knock when it's time to pause", isOn: $fish.bell)
                 if Microphone.canTell {
                     Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
                 }
@@ -102,6 +103,8 @@ private struct KnockingSettings: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission.")
+                        .settingsFootnote()
+                    Text("After half an hour of typing with no three-minute rest, the fish knocks once. Stop, and take three breaths; typed knocks keep quiet for them. Nothing is counted or kept.")
                         .settingsFootnote()
                     if Microphone.canTell {
                         Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
