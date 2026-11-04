@@ -3,31 +3,60 @@ import SwiftUI
 /// Moves the borderless panel while the fish is dragged.
 @MainActor enum PanelMover {
     static weak var panel: NSPanel?
+    /// Called when a drag ends, to keep the fish on a screen.
+    static var onDrop: () -> Void = {}
     private static var start: (mouse: NSPoint, origin: NSPoint)?
 
-    static func drag() {
+    /// Start moving, `travel` after the press went down, in view coordinates.
+    static func begin(after travel: CGSize) {
         guard let panel else { return }
         let mouse = NSEvent.mouseLocation
-        if start == nil { start = (mouse, panel.frame.origin) }
-        guard let start else { return }
+        start = (NSPoint(x: mouse.x - travel.width, y: mouse.y + travel.height), panel.frame.origin)
+    }
+
+    static func drag() {
+        guard let panel, let start else { return }
+        let mouse = NSEvent.mouseLocation
         panel.setFrameOrigin(NSPoint(x: start.origin.x + mouse.x - start.mouse.x,
                                      y: start.origin.y + mouse.y - start.mouse.y))
     }
 
-    static func end() { start = nil }
+    static func end() {
+        guard start != nil else { return }
+        start = nil
+        onDrop()
+    }
 }
 
 struct FishView: View {
     @Environment(Fish.self) private var fish
+    /// The press on the fish: it knocks as it goes down, and becomes a move
+    /// once the pointer travels.
+    @GestureState private var grip = Grip.none
+
+    private enum Grip { case none, pressed, moving }
 
     var body: some View {
         let side = fish.size.side
         VStack(spacing: 0) {
             SpriteFish(pack: fish.pack, side: side)
                 .frame(width: side, height: side)
-                .onTapGesture { location in fish.knock(at: location.x / side) }
-                .gesture(DragGesture(minimumDistance: 3)
-                    .onChanged { _ in PanelMover.drag() }
+                // The mallet swings as the press goes down, as a drum answers a
+                // stick, not when the click lets go. A press that turns into
+                // a drag before the mallet lands takes the swing back.
+                .gesture(DragGesture(minimumDistance: 0)
+                    .updating($grip) { value, grip, _ in
+                        if grip == .none {
+                            grip = .pressed
+                            fish.knock(at: value.startLocation.x / side)
+                        }
+                        if grip == .pressed, hypot(value.translation.width, value.translation.height) >= 3 {
+                            grip = .moving
+                            fish.callOff()
+                            PanelMover.begin(after: value.translation)
+                        }
+                        if grip == .moving { PanelMover.drag() }
+                    }
                     .onEnded { _ in PanelMover.end() })
                 .contextMenu { FishMenu() }
                 // Drop a .plinthskin, a skin folder or an image on the fish to wear it.
@@ -82,7 +111,8 @@ private extension View {
         padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 9))
-            .transition(.opacity)
+            // Rises a little into place as it appears, and sinks as it goes.
+            .transition(.opacity.combined(with: .offset(y: 4)).combined(with: .scale(scale: 0.97, anchor: .top)))
     }
 }
 

@@ -74,6 +74,14 @@ enum Rhythm: String, CaseIterable, Identifiable {
     }
 }
 
+/// One swing of the mallet. `quick` is the short swing for a typed key;
+/// `calledOff` takes a swing still in the air back up without landing.
+struct Swing: Equatable {
+    var serial = 0
+    var quick = false
+    var calledOff = false
+}
+
 @MainActor @Observable
 final class Fish {
     static let shared = Fish()
@@ -98,9 +106,10 @@ final class Fish {
     /// When the mallet last met the wood, on the system uptime clock.
     @ObservationIgnored private var lastImpact = -Double.infinity
 
-    private(set) var strikes = 0
-    /// Whether the latest swing is a quick one, for a typed key.
-    private(set) var quickStrike = false
+    /// The mallet's latest swing; each new one swings it again.
+    private(set) var swing = Swing()
+    /// A swing by hand still in the air, until the mallet lands.
+    @ObservationIgnored private var handSwing: (serial: Int, task: Task<Void, Never>)?
     /// Counts the moments the mallet meets the figure. Nothing else is
     /// counted: knocking earns no merit.
     private(set) var impacts = 0
@@ -232,15 +241,23 @@ final class Fish {
     /// `at` is where a click landed across the fish, from 0 at its left edge
     /// to 1 at its right.
     func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil) {
-        quickStrike = quick
-        strikes += 1
+        swing = Swing(serial: swing.serial + 1, quick: quick)
+        let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
-        let (force, place) = touch(byHand: byHand, quick: quick, at: x,
-                                   silence: ProcessInfo.processInfo.systemUptime + delay - lastImpact)
-        // The knock is made while the mallet is in the air.
-        let knock = sound.synthesize(force: force, place: place)
-        Task {
-            try? await Task.sleep(for: .seconds(delay))
+        // A press is read a moment into the swing, once a Force Touch trackpad
+        // has felt how firm it is. A typed key has no time to spare.
+        let feel = quick ? 0 : Self.liftDuration
+        let swingTask = Task {
+            try? await Task.sleep(for: .seconds(feel))
+            guard !Task.isCancelled else { return }
+            let deep = (press?.stage ?? 0) >= 2
+            let (force, place) = touch(byHand: byHand, quick: quick, at: x,
+                                       silence: ProcessInfo.processInfo.systemUptime + delay - feel - lastImpact)
+            // The knock is made while the mallet is in the air.
+            let knock = sound.synthesize(force: force, place: place)
+            try? await Task.sleep(for: .seconds(delay - feel))
+            guard !Task.isCancelled else { return }
+            if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
             let now = ProcessInfo.processInfo.systemUptime
             bloom = Self.bloom(afterSilence: now - lastImpact)
@@ -250,12 +267,24 @@ final class Fish {
                 sound.play(samples, volume: Float(volume), bloom: Float(bloom))
             }
             if byHand {
-                // A Force Touch trackpad taps back as the mallet lands. macOS
-                // plays it only while a finger rests on the trackpad.
-                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                // A Force Touch trackpad taps back as the mallet lands, harder
+                // for a deep press. macOS plays it only while a finger rests
+                // on the trackpad, as it still does when the knock is pressed.
+                NSHapticFeedbackManager.defaultPerformer.perform(deep ? .levelChange : .generic,
+                                                                 performanceTime: .now)
                 speak()
             }
         }
+        if byHand { handSwing = (serial, swingTask) }
+    }
+
+    /// The fish is being moved, not knocked: a swing by hand still in the air
+    /// goes back up without landing.
+    func callOff() {
+        guard let handSwing else { return }
+        handSwing.task.cancel()
+        self.handSwing = nil
+        swing = Swing(serial: swing.serial + 1, calledOff: true)
     }
 
     /// How hard and where a knock lands. A firm click lands harder and a deep
