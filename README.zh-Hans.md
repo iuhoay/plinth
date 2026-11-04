@@ -76,6 +76,32 @@ Plinth 需要 macOS 14 Sonoma 或更新版本，支持 Apple 芯片和 Intel。
 make test; open -g plinth://knock
 ```
 
+编程助手用 hook 就行。在 Claude Code 里，把下面这段加进 `~/.claude/settings.json`（已经有 `hooks` 的话，合并进去）。Claude 做完时木鱼敲一下；它停下来等你批准、或等你回话时，也敲一下：
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "open -g plinth://knock" }] }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [{ "type": "command", "command": "open -g plinth://knock" }]
+      }
+    ]
+  }
+}
+```
+
+在 Codex 里，把这一行加进 `~/.codex/config.toml`，每一轮结束时木鱼敲一下。Codex 会给命令附上一个 JSON 参数，`sh` 不理它：
+
+```toml
+notify = ["sh", "-c", "open -g plinth://knock", "sh"]
+```
+
+Plinth 没在运行时，这一敲会把它打开，木鱼出现后再敲。
+
 在「快捷指令」里，Plinth 提供一个「敲一下」动作。只有签名的正式版才能在快捷指令里运行它；自己构建的版本请用上面的 URL。和自动敲击一样，这些敲击不会得到回应。
 
 开会时，只有亲手敲才会响。别的 App 在用麦克风时，打字敲、自动敲、点香，以及脚本和快捷指令的敲击，木槌照样落下，但没有声音。Plinth 只是问 macOS 哪些 App 在读麦克风，自己从不打开麦克风，所以不需要麦克风权限。这个设置默认打开，需要 macOS 14.2 或更新版本；更早的系统里不显示这一项。

@@ -76,6 +76,32 @@ Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g`
 make test; open -g plinth://knock
 ```
 
+For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish knocks when Claude is done, and when it is waiting on you, for a permission or for your reply:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "open -g plinth://knock" }] }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [{ "type": "command", "command": "open -g plinth://knock" }]
+      }
+    ]
+  }
+}
+```
+
+In Codex, add this line to `~/.codex/config.toml` and the fish knocks when a turn ends. Codex passes the command a JSON argument, which `sh` leaves alone:
+
+```toml
+notify = ["sh", "-c", "open -g plinth://knock", "sh"]
+```
+
+If Plinth isn't running, the knock opens it, and the fish knocks once it is on screen.
+
 In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
 
 In a call, only a knock by hand sounds. While another app listens to a microphone, typed knocks, auto-knocks, the incense, and knocks from scripts and Shortcuts still swing the mallet but make no sound. Plinth asks macOS which apps are reading a microphone and never opens one itself, so this needs no microphone permission. It is on by default, and needs macOS 14.2 or later; on earlier versions the setting doesn't appear.
