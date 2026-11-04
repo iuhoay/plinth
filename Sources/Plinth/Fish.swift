@@ -709,7 +709,11 @@ final class Fish {
     /// once you have typed long enough without a rest, the bell knocks instead.
     private func typed() {
         guard !recordingMalletKey else { return }
-        if callTask != nil, ProcessInfo.processInfo.systemUptime > callLanded {
+        // A key that went down after the call's first knock means you are
+        // back. When it went down, not when the watcher noticed: for the bell
+        // alone it looks only about once a second, and a key from before the
+        // knock may be noticed after it.
+        if callTask != nil, TypingWatcher.lastEvent(.keyDown) > callLanded {
             endCall()
         }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
