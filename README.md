@@ -8,7 +8,9 @@ A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one on a small neon pedestal next to your windows.
 
-Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth keeps none. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」, none at all. Your first knock gets the same answer.
+Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth keeps none. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」, none at all. Your first knock gets the same answer. Focus timers pin every passing second to the screen and habit apps turn rest into another streak to keep; Plinth keeps no count and shows no clock. It speaks fourteen lines from the Chan records, one a day, ending with Vimalakirti's silence; after that, it only knocks.
+
+Computers used to assume your eyes were fixed on the active window. Now long builds and coding agents work in the background while you read, think, or step away, and another banner or badge only crowds an already crowded screen. For centuries, a Chan hall has coordinated dozens of monks in silence without words or clocks, using only the struck wood and bronze of its instruments (*jianchui*, 犍槌): one knock to enter stillness as the incense is lit, three to leave it when the stick burns out. Plinth works the same way. It stores no recordings, synthesizing every strike as the mallet falls, and asks macOS for no permissions—neither watching which keys you type nor opening a microphone. It simply sits at the corner of your desk, keeping time with your breath, or striking three clear knocks when your work needs you back.
 
 ## Install
 
