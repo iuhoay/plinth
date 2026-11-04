@@ -70,7 +70,7 @@ Plinth 需要 macOS 14 Sonoma 或更新版本，支持 Apple 芯片和 Intel。
 
 打字时跟着敲，靠的是向 macOS 询问上一次按键是多久以前，和系统判断闲置时间用的是同一个计数。Plinth 始终不知道按的是哪个键，所以不需要辅助功能或输入监控权限。
 
-脚本和别的 App 也能敲。`open -g plinth://knock` 敲一下（`-g` 让你正在用的 App 留在前台）。`open -g plinth://call` 唤你回来，这样长时间的构建、测试或编程助手跑完时，木鱼会告诉你：
+脚本和别的 App 也能敲。`open -g plinth://knock` 敲一下（`-g` 让你正在用的 App 留在前台）。`open -g plinth://call` 唤你回来，这样长时间的构建或测试跑完时，木鱼会告诉你：
 
 ```sh
 make test; open -g plinth://call
@@ -78,14 +78,11 @@ make test; open -g plinth://call
 
 唤你，是敲三下，和一支香燃尽时一样。这时自动敲击和打字敲击都静下来，静一会儿再敲这三下，所以不管木鱼刚才在做什么，你都听得出来。亲手敲一下，唤声就停了。
 
-编程助手用 hook 就行。在 Claude Code 里，把下面这段加进 `~/.claude/settings.json`（已经有 `hooks` 的话，合并进去）。Claude 做完时木鱼唤你；它停下来等你批准时，也唤你：
+编程助手离了你走不下去时，也可以唤你。在 Claude Code 里，把下面这个 hook 加进 `~/.claude/settings.json`（已经有 `hooks` 的话，合并进去）。Claude 停下来等你批准时，木鱼唤你。它每回完一句并不唤你，因为那时你多半就在旁边看着：
 
 ```json
 {
   "hooks": {
-    "Stop": [
-      { "hooks": [{ "type": "command", "command": "open -g plinth://call" }] }
-    ],
     "Notification": [
       {
         "matcher": "permission_prompt",
@@ -96,10 +93,16 @@ make test; open -g plinth://call
 }
 ```
 
-在 Codex 里，把这一行加进 `~/.codex/config.toml`，每一轮结束时木鱼唤你。Codex 会给命令附上一个 JSON 参数，`sh` 不理它：
+在 Codex 里，把下面这段加进 `~/.codex/hooks.json`，再在 `/hooks` 里信任它一次。Codex 请你批准时，木鱼唤你：
 
-```toml
-notify = ["sh", "-c", "open -g plinth://call", "sh"]
+```json
+{
+  "hooks": {
+    "PermissionRequest": [
+      { "hooks": [{ "type": "command", "command": "open -g plinth://call" }] }
+    ]
+  }
+}
 ```
 
 Plinth 没在运行时，这两个 URL 都会把它打开，木鱼出现后再敲。
