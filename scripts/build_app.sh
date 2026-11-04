@@ -75,6 +75,8 @@ if [ "$APPSTORE" = 1 ]; then
   for key in SUFeedURL SUPublicEDKey SUEnableAutomaticChecks; do
     plutil -remove "$key" "$APP/Contents/Info.plist"
   done
+  # Bring the skins of an earlier Plinth into the sandbox on first launch.
+  cp App/container-migration.plist "$APP/Contents/Resources/"
   if [ -n "$IDENTITY" ]; then
     PROFILE="${PLINTH_PROVISIONING_PROFILE:?Set PLINTH_PROVISIONING_PROFILE to the Mac App Store provisioning profile}"
     INSTALLER="${PLINTH_INSTALLER_IDENTITY:?Set PLINTH_INSTALLER_IDENTITY to a 3rd Party Mac Developer Installer certificate}"

@@ -116,6 +116,8 @@ PLINTH_INSTALLER_IDENTITY="3rd Party Mac Developer Installer: Your Name (TEAMID)
 ./scripts/build_app.sh
 ```
 
+A sandboxed app keeps its files in its container, `~/Library/Containers/dev.rubycat.plinth`. On the first launch of the App Store build, macOS copies the preferences of an earlier Plinth into it, and [`App/container-migration.plist`](../App/container-migration.plist) has it move `~/Library/Application Support/Plinth`, with the user's skins, there too. Only that first launch migrates anything, and the skins are moved, not copied: a Plinth from a disk image opened afterwards doesn't see them.
+
 The script embeds the profile, signs the app with the sandbox entitlements plus the app and team identifiers from the profile, and writes `build/Plinth.pkg`. Upload it with Transporter or `xcrun altool --upload-package`. Every upload needs a higher `PLINTH_BUILD` than the last.
 
 ## Building a signed image locally
