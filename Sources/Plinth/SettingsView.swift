@@ -27,6 +27,15 @@ private struct KnockingSettings: View {
                         Image(systemName: "speaker.wave.3.fill").foregroundStyle(.secondary)
                     }
                 }
+                LabeledContent("Space") {
+                    Slider(value: $fish.space, in: 0...1) {
+                        EmptyView()
+                    } minimumValueLabel: {
+                        Text("Meditation room").foregroundStyle(.secondary)
+                    } maximumValueLabel: {
+                        Text("Great hall").foregroundStyle(.secondary)
+                    }
+                }
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
                 if Microphone.canTell {
                     Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
@@ -43,7 +52,7 @@ private struct KnockingSettings: View {
                     }
                 }
             }
-            Section("Auto-Knock") {
+            Section {
                 Toggle("Knock on its own", isOn: $fish.autoKnock)
                 LabeledContent("Every") {
                     HStack {
@@ -60,8 +69,17 @@ private struct KnockingSettings: View {
                     }
                 }
                 .disabled(!fish.autoKnock)
+                Picker("Rhythm", selection: $fish.rhythm) {
+                    ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
+                }
+                .disabled(!fish.autoKnock)
                 Toggle("Stop after 108 knocks, one turn of a mala", isOn: $fish.stopAt108)
                     .disabled(!fish.autoKnock)
+            } header: {
+                Text("Auto-Knock")
+            } footer: {
+                Text("Quickening starts slow and quickens into a roll, as a chant begins, then rests. Natural lets each gap run a little long or short, like a hand keeping time.")
+                    .settingsFootnote()
             }
             Section("Display") {
                 Picker("Size", selection: $fish.size) {

@@ -34,6 +34,36 @@ enum FishSize: String, CaseIterable, Identifiable {
     }
 }
 
+/// How auto-knock spaces its knocks around the chosen interval.
+enum Rhythm: String, CaseIterable, Identifiable {
+    case steady, quickening, natural
+    var id: Self { self }
+    var title: String {
+        switch self {
+        case .steady: String(localized: "Steady")
+        case .quickening: String(localized: "Quickening")
+        case .natural: String(localized: "Natural")
+        }
+    }
+
+    /// The quiet before auto-knock's knock number `n`, counting from 0.
+    func gap(before n: Int, interval: Double) -> Double {
+        switch self {
+        case .steady:
+            return interval
+        case .natural:
+            // A hand keeping time: each gap a little long or short, about 0.7 to 1.4 times.
+            return interval * exp(.random(in: -0.35...0.35))
+        case .quickening:
+            // 起板: a round of fifteen knocks that starts slow and quickens
+            // into a roll, then a rest before the next round begins.
+            let k = n % 15
+            if k == 0 { return n == 0 ? interval : interval * 5 }
+            return max(interval * 2.5 * pow(0.1, Double(k - 1) / 13), 0.15)
+        }
+    }
+}
+
 @MainActor @Observable
 final class Fish {
     static let shared = Fish()
@@ -65,16 +95,22 @@ final class Fish {
     /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
     private(set) var bloom = 1.0
     private(set) var notice: Quote?
+    /// Auto-knocks since it was turned on, for Stop after 108.
     private var autoRound = 0
+    /// Auto-knocks since the rhythm last changed, so a new rhythm starts at its beginning.
+    private var rhythmStep = 0
     /// The stick of incense burning beside the fish, if one is lit.
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
 
     var autoKnock: Bool {
-        didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; restartAuto() }
+        didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; rhythmStep = 0; restartAuto() }
     }
     var interval: Double {
         didSet { defaults.set(interval, forKey: "interval"); restartAuto() }
+    }
+    var rhythm: Rhythm {
+        didSet { defaults.set(rhythm.rawValue, forKey: "rhythm"); rhythmStep = 0; restartAuto() }
     }
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
     /// Each key pressed in any app knocks once. Typed knocks are never answered.
@@ -82,6 +118,20 @@ final class Fish {
         didSet { defaults.set(knockAsYouType, forKey: "knockAsYouType"); watchTyping() }
     }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
+    /// The room the knock rings in: 0 a small meditation room, 1 a great hall.
+    var space: Double {
+        didSet {
+            defaults.set(space, forKey: "space")
+            // Rendering the room takes a moment, so wait for the slider to settle.
+            spaceChange?.cancel()
+            spaceChange = Task {
+                try? await Task.sleep(for: .seconds(0.25))
+                guard !Task.isCancelled else { return }
+                sound.use(voice: pack.voice, space: Float(space))
+            }
+        }
+    }
+    @ObservationIgnored private var spaceChange: Task<Void, Never>?
     /// While another app listens to a microphone, as in a meeting, only a
     /// knock by hand sounds; the others swing in silence.
     var quietWhileMicInUse: Bool {
@@ -131,14 +181,16 @@ final class Fish {
     private init() {
         let d = UserDefaults.standard
         d.register(defaults: [
-            "interval": 1.0, "volume": 0.8, "size": FishSize.medium.rawValue,
+            "interval": 1.0, "volume": 0.8, "space": Double(KnockSynth.Hall.defaultSpace), "size": FishSize.medium.rawValue,
             "placement": Placement.floating.rawValue, "quietWhileMicInUse": true,
         ])
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
+        rhythm = Rhythm(rawValue: d.string(forKey: "rhythm") ?? "") ?? .steady
         stopAt108 = d.bool(forKey: "stopAt108")
         knockAsYouType = d.bool(forKey: "knockAsYouType")
         volume = d.double(forKey: "volume")
+        space = d.double(forKey: "space")
         quietWhileMicInUse = d.bool(forKey: "quietWhileMicInUse")
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
@@ -166,8 +218,19 @@ final class Fish {
             if byHand || !quietWhileMicInUse || !Microphone.inUseByOthers() {
                 sound.play(volume: Float(volume), bloom: Float(bloom))
             }
-            if byHand { speak() }
+            if byHand {
+                // A Force Touch trackpad taps back as the mallet lands. macOS
+                // plays it only while a finger rests on the trackpad.
+                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                speak()
+            }
         }
+    }
+
+    /// Place the knock where the fish sits: `x` runs from 0 at the screen's
+    /// left edge to 1 at its right. Not all the way to one ear: it is beside you.
+    func heard(at x: Double) {
+        sound.pan = Float((min(max(x, 0), 1) * 2 - 1) * 0.5)
     }
 
     /// The longer the quiet before a knock, the more fully it rings: none of
@@ -258,7 +321,7 @@ final class Fish {
     private func loadSkin() {
         pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
         menuIcon = pack.idle.menuBarIcon()
-        sound.use(voice: pack.voice)
+        sound.use(voice: pack.voice, space: Float(space))
         skinFileWatcher?.cancel()
         let isOwn = skins.contains { $0.id == skin }
         skinFileWatcher = isOwn ? watch(Self.skinsDirectory.appending(path: skin), [.write, .extend, .delete, .rename]) : nil
@@ -309,10 +372,12 @@ final class Fish {
         guard autoKnock else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(self?.interval ?? 1))
+                guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }
+                try? await Task.sleep(for: .seconds(gap))
                 guard let self, !Task.isCancelled else { return }
                 knock(byHand: false)
                 autoRound += 1
+                rhythmStep += 1
                 // One turn of the mala, then quiet. The quiet says the rest.
                 if stopAt108 && autoRound >= 108 { autoKnock = false }
             }
@@ -341,6 +406,7 @@ final class KnockSound {
     private var slots: [Slot] = []
     private var cache: [KnockSynth.Variation] = []
     private var voice = ""
+    private var space = KnockSynth.Hall.defaultSpace
     private var quiet: Task<Void, Never>?
     private let mono = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 1)!
     private let stereo = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 2)!
@@ -358,12 +424,25 @@ final class KnockSound {
         engine.prepare()
     }
 
-    /// Wear this voice. Unknown names, and none, are the wooden fish.
-    func use(voice name: String?) {
+    /// Wear this voice, in a room of this size. Unknown names, and none, are
+    /// the wooden fish.
+    func use(voice name: String?, space: Float) {
         let next = KnockSynth.resolve(name)
-        guard next != voice else { return }
+        guard next != voice || space != self.space else { return }
         voice = next
-        cache = KnockSynth.prepare(next)
+        self.space = space
+        cache = KnockSynth.prepare(next, space: space)
+    }
+
+    /// Where the fish sits, from -1 at the screen's left edge to 1 at its
+    /// right. Knocks still ringing move with it.
+    var pan: Float = 0 {
+        didSet {
+            for slot in slots {
+                slot.dry.pan = pan
+                slot.hall.pan = pan
+            }
+        }
     }
 
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;

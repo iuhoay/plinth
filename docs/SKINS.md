@@ -91,7 +91,7 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `piston` | Steel on steel: a short clack. |
 | `crt` | A plastic case and a faint tick. |
 
-Every voice is heard in the same wooden hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
+Every voice is heard in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
 ## The mallet
 

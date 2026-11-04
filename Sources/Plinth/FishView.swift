@@ -121,6 +121,9 @@ struct FishMenu: View {
             Text("Steady · every 1 s").tag(1.0)
             Text("Fast · every 0.5 s").tag(0.5)
         }
+        Picker("Rhythm", selection: $fish.rhythm) {
+            ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
+        }
         Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
         if fish.incense == nil {
             Menu("Light Incense") {
