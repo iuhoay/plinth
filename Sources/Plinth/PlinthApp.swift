@@ -43,14 +43,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel.setFrameAutosaveName("PlinthPanel")
         fish.onWindowChange = { [weak self] in self?.layoutPanel() }
+        // The knock comes from where the fish sits, and follows it when dragged.
+        NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: panel, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.placeSound() }
+        }
         layoutPanel()
         panel.orderFrontRegardless()
+        placeSound()
         Updates.shared.start()
     }
 
+    private func placeSound() {
+        guard let screen = panel.screen ?? NSScreen.main else { return }
+        Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width)
+    }
+
     /// `plinth://knock` knocks once, so scripts and other apps can knock.
+    /// Files opened with Plinth, such as `.plinthskin`, are installed as skins.
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls where url.host() == "knock" {
+        Fish.shared.install(urls.filter(\.isFileURL))
+        for url in urls where url.scheme == "plinth" && url.host() == "knock" {
             Fish.shared.knock(byHand: false)
         }
     }

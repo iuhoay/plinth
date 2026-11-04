@@ -27,14 +27,32 @@ private struct KnockingSettings: View {
                         Image(systemName: "speaker.wave.3.fill").foregroundStyle(.secondary)
                     }
                 }
+                LabeledContent("Space") {
+                    Slider(value: $fish.space, in: 0...1) {
+                        EmptyView()
+                    } minimumValueLabel: {
+                        Text("Meditation room").foregroundStyle(.secondary)
+                    } maximumValueLabel: {
+                        Text("Great hall").foregroundStyle(.secondary)
+                    }
+                }
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
+                if Microphone.canTell {
+                    Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
+                }
             } header: {
                 Text("Knocking")
             } footer: {
-                Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
-                    .settingsFootnote()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
+                        .settingsFootnote()
+                    if Microphone.canTell {
+                        Text("Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
+                            .settingsFootnote()
+                    }
+                }
             }
-            Section("Auto-Knock") {
+            Section {
                 Toggle("Knock on its own", isOn: $fish.autoKnock)
                 LabeledContent("Every") {
                     HStack {
@@ -51,8 +69,17 @@ private struct KnockingSettings: View {
                     }
                 }
                 .disabled(!fish.autoKnock)
+                Picker("Rhythm", selection: $fish.rhythm) {
+                    ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
+                }
+                .disabled(!fish.autoKnock)
                 Toggle("Stop after 108 knocks, one turn of a mala", isOn: $fish.stopAt108)
                     .disabled(!fish.autoKnock)
+            } header: {
+                Text("Auto-Knock")
+            } footer: {
+                Text("Quickening starts slow and quickens into a roll, as a chant begins, then rests. Natural lets each gap run a little long or short, like a hand keeping time.")
+                    .settingsFootnote()
             }
             Section("Display") {
                 Picker("Size", selection: $fish.size) {
@@ -101,16 +128,18 @@ private struct SkinSettings: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                 } else {
-                    grid(fish.skins)
+                    grid(fish.skins, exportable: true)
                 }
                 HStack {
                     Button("Add Skins…") { fish.addSkins() }
                     Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+                    Spacer()
+                    Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
                 }
             } header: {
                 Text("Your Skins")
             } footer: {
-                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too.")
+                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one.")
                     .settingsFootnote()
             }
         }
@@ -118,10 +147,16 @@ private struct SkinSettings: View {
         .frame(height: 520)
     }
 
-    private func grid(_ options: [SkinOption]) -> some View {
+    private func grid(_ options: [SkinOption], exportable: Bool = false) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
             ForEach(options) { option in
                 SkinTile(option: option, selected: option.id == fish.skin) { fish.skin = option.id }
+                    .contextMenu {
+                        // A folder skin goes out as one .plinthskin file; a single image is shared as it is.
+                        if exportable, (try? Fish.skinsDirectory.appending(path: option.id).resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                            Button("Export as .plinthskin…") { fish.export(option) }
+                        }
+                    }
             }
         }
         .padding(.vertical, 4)

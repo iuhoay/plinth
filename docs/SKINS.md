@@ -12,11 +12,25 @@ Plinth reads your skins from:
 ~/Library/Application Support/Plinth/Skins/
 ```
 
-Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images or folders into it. Copying replaces any skin of the same name that is already there.
+Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
 
 Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
 A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the wooden fish.
+
+## Sharing a skin: .plinthskin
+
+A `.plinthskin` file is a folder skin in a zip archive, to share as one file. Double-click it, drop it on the fish, or pick it in **Add Skins…**: Plinth unpacks it into the skins folder and wears it.
+
+The archive holds either the skin folder itself, which names the skin, or the skin's files at its top level, in which case the skin is named after the archive. An archive with anything else in it, with no `idle.png`, or with a symbolic link is refused.
+
+To make one, right-click a skin of your own in **Settings → Skins** and choose **Export as .plinthskin…**, or run:
+
+```sh
+ditto -c -k --keepParent my-skin my-skin.plinthskin
+```
+
+Finder's **Compress** works too; rename the `.zip` to `.plinthskin`.
 
 ## Single-image skins
 
@@ -65,12 +79,14 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 | `name` | string | file name | The skin's name in the menus and in Settings. |
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
+| `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
 
 All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch:
 
 - If the file isn't valid JSON, or a known key has the wrong type (for example `"strike": "0.6, 0.3"`), Plinth ignores the whole file and every key falls back to its default.
 - A `strike` that doesn't hold exactly two numbers falls back to `[0.6, 0.3]`; `name` and `voice` still apply.
 - An unknown `voice`, including one in the wrong case such as `"Jade"`, plays the wooden knock.
+- A `glow` that isn't `#` and six hex digits is ignored, and the censer stays unlit.
 
 ### Voices
 
@@ -99,7 +115,7 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `board` | The long wooden fish that hangs outside the hall: lower and longer than `wood`. |
 | `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
 
-Every voice is heard in the same wooden hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
+Every voice is heard in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
 ## The mallet
 

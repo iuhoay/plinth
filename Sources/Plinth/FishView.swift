@@ -30,12 +30,17 @@ struct FishView: View {
                     .onChanged { _ in PanelMover.drag() }
                     .onEnded { _ in PanelMover.end() })
                 .contextMenu { FishMenu() }
+                // Drop a .plinthskin, a skin folder or an image on the fish to wear it.
+                .dropDestination(for: URL.self) { urls, _ in
+                    fish.install(urls.filter(\.isFileURL))
+                    return true
+                }
                 .help("Click to knock · Drag to move · Right-click for options")
-                // The censer stands left of the pedestal, on the same ground.
-                .overlay(alignment: .bottomLeading) {
+                // The censer stands left of the pedestal, a touch behind it.
+                .background(alignment: .topLeading) {
                     if let incense = fish.incense {
                         IncenseView(incense: incense, side: side)
-                            .offset(y: -side * 0.035)
+                            .offset(x: -side * IncenseView.lead)
                             .transition(.opacity)
                     }
                 }
@@ -121,6 +126,9 @@ struct FishMenu: View {
             Text("Steady · every 1 s").tag(1.0)
             Text("Fast · every 0.5 s").tag(0.5)
         }
+        Picker("Rhythm", selection: $fish.rhythm) {
+            ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
+        }
         Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
         if fish.incense == nil {
             Menu("Light Incense") {
@@ -139,6 +147,7 @@ struct FishMenu: View {
             Divider()
             Button("Add Skins…") { fish.addSkins() }
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+            Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
         }
         Divider()
         let updates = Updates.shared

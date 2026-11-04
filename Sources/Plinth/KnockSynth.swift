@@ -18,12 +18,13 @@ enum KnockSynth {
         return name
     }
 
-    /// Three strikes of `name`, so a run of knocks is not one recording played again.
-    static func prepare(_ name: String) -> [Variation] {
+    /// Three strikes of `name`, so a run of knocks is not one recording played
+    /// again, heard in a room of size `space` (see `Hall.shape`).
+    static func prepare(_ name: String, space: Float = Hall.defaultSpace) -> [Variation] {
         let tone = tones[resolve(name)]!
         return tone.bases.enumerated().map { i, base in
             let dry = strike(tone, base: base, seed: tone.seed &+ UInt64(i))
-            let hall = Hall.render(dry)
+            let hall = Hall.render(dry, space: space)
             return Variation(dry: dry, left: hall.left, right: hall.right)
         }
     }
@@ -286,14 +287,32 @@ enum KnockSynth {
         return last
     }
 
-    /// One large wooden hall. Every voice is heard in it; the app mixes more of
-    /// the tail in the longer the quiet before a knock.
-    private enum Hall {
-        static let length: Float = 3
-        static let directToHall: Float = 2
+    /// One wooden room, from a small meditation room to a large hall. Every
+    /// voice is heard in it; the app mixes more of the tail in the longer the
+    /// quiet before a knock.
+    enum Hall {
+        /// The hall the knocks have always rung in, and tools/knock_synth.py renders.
+        static let defaultSpace: Float = 0.7
 
-        static func render(_ dry: [Float]) -> (left: [Float], right: [Float]) {
+        /// The room at `space`: 0 a small meditation room (禅房), `defaultSpace`
+        /// a large hall, 1 a larger one (大殿). `size` scales its reflections'
+        /// distances, `rt60` is how long its tail rings, and `directToHall` how
+        /// much quieter that tail is than the knock.
+        static func shape(_ space: Float) -> (size: Float, rt60: Float, directToHall: Float) {
+            let s = min(max(space, 0), 1)
+            // Interpolate from the default up or down, so the default is exact.
+            if s >= defaultSpace {
+                let t = (s - defaultSpace) / (1 - defaultSpace)
+                return (1 + 0.3 * t, 2.3 + 1.3 * t, 2 - 0.4 * t)
+            }
+            let t = (defaultSpace - s) / defaultSpace
+            return (1 - 0.65 * t, 2.3 - 1.85 * t, 2 + 3 * t)
+        }
+
+        static func render(_ dry: [Float], space: Float) -> (left: [Float], right: [Float]) {
+            let (size, rt60, directToHall) = shape(space)
             let sr = KnockSynth.sampleRate
+            let length = max(rt60 + 0.7, 0.8)
             let n = Int(length * sr)
             var left = [Float](repeating: 0, count: n)
             var right = [Float](repeating: 0, count: n)
@@ -304,7 +323,7 @@ enum KnockSynth {
                 (34, 0.16, 0.50), (46, 0.13, -0.15), (58, 0.10, 0.30), (71, 0.08, -0.40),
             ]
             for (ms, gain, pan) in taps {
-                let d = Int(ms / 1000 * sr)
+                let d = Int(ms * size / 1000 * sr)
                 guard d < n else { continue }
                 let lGain = gain * sqrt((1 - pan) / 2)
                 let rGain = gain * sqrt((1 + pan) / 2)
@@ -315,11 +334,11 @@ enum KnockSynth {
                 }
             }
             let delays: [Float] = [47, 53, 59, 67, 73, 83, 89, 97]
-            var combsL = delays.map { Comb(ms: $0, rt60: 2.3, damp: 0.42) }
-            var combsR = delays.map { Comb(ms: $0 + 1.7, rt60: 2.3, damp: 0.42) }
+            var combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: 0.42) }
+            var combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: 0.42) }
             var allL = [Allpass(ms: 5.1), Allpass(ms: 1.7)]
             var allR = [Allpass(ms: 6.3), Allpass(ms: 2.3)]
-            let pre = Int(0.02 * sr)
+            let pre = Int(0.02 * size * sr)
             for i in 0..<n {
                 let x = i >= pre && i - pre < dry.count ? dry[i - pre] : 0
                 var l: Float = 0
@@ -337,7 +356,7 @@ enum KnockSynth {
                 left[i] += l
                 right[i] += r
             }
-            let fade = Int(0.4 * sr)
+            let fade = Int(min(0.4, length / 3) * sr)
             for i in 0..<fade {
                 let g = pow(1 - Float(i) / Float(fade), 2)
                 left[n - fade + i] *= g

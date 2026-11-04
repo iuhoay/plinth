@@ -23,8 +23,8 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 ## Features
 
-- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings.
-- **Auto-knock.** Let it keep a steady rhythm (every 0.4 to 4 seconds), with an option to stop after 108 knocks, one full turn of a mala.
+- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
+- **Auto-knock.** Let it keep time on its own (every 0.4 to 4 seconds): steadily, quickening from slow into a roll and resting, as a chant begins (起板), or naturally, each gap a little long or short. There's an option to stop after 108 knocks, one full turn of a mala.
 - **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock as it's lit, quiet while it burns down beside the fish, three knocks as it goes out. No clock, no count.
 - **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
@@ -51,11 +51,11 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Menu item | What it does |
 | --- | --- |
 | Knock | Knocks once. |
-| Auto-Knock | Knocks on its own, at the **Pace** you pick: every 2, 1, or 0.5 seconds. |
+| Auto-Knock | Knocks on its own, at the **Pace** you pick (every 2, 1, or 0.5 seconds), in the **Rhythm** you pick: Steady, Quickening, or Natural. |
 | Knock as You Type | Knocks once for each key you press, in any app. |
 | Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
 | Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
-| Skin | Picks a skin, adds your own, or opens the skins folder. |
+| Skin | Picks a skin, adds your own, opens the skins folder, or browses the community gallery. |
 | Check for Updates… | Asks GitHub for a newer Plinth now. It reads **Update Available…** when one is waiting. |
 | Settings… | Opens Settings. |
 | Quit Plinth | Quits. |
@@ -64,7 +64,7 @@ Settings has three tabs:
 
 | Tab | Settings |
 | --- | --- |
-| Knocking | Volume; knock as you type; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
+| Knocking | Volume; space, from a meditation room to a great hall; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, in any rhythm, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
 | Why a Fish | The line from the old monastic rules on why the block is a fish. |
 
@@ -78,6 +78,8 @@ make test; open -g plinth://knock
 
 In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
 
+In a call, only a knock by hand sounds. While another app listens to a microphone, typed knocks, auto-knocks, the incense, and knocks from scripts and Shortcuts still swing the mallet but make no sound. Plinth asks macOS which apps are reading a microphone and never opens one itself, so this needs no microphone permission. It is on by default, and needs macOS 14.2 or later; on earlier versions the setting doesn't appear.
+
 ## Skins
 
 A skin is a single image, or a folder with an `idle.png` and, optionally, blink and hit frames, its own mallet and burst, and a `skin.json` for its name, where the mallet lands, and which knock it makes:
@@ -89,7 +91,7 @@ my-skin/
 └── skin.json   { "name": "My Skin", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. Plinth picks up changes while it runs.
+Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share one, send it as a `.plinthskin` file: double-click one, or drop it on the fish, to install it. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
 
 The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 
