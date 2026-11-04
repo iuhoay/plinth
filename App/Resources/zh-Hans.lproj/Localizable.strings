@@ -50,3 +50,7 @@
 /* Settings: Why a Fish */
 "Why a Fish" = "为何是鱼";
 "Knocking earns no merit." = "敲木鱼，不积功德。";
+
+/* Settings: quiet while a microphone is in use */
+"Quiet while a microphone is in use" = "麦克风在用时不出声";
+"Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself." = "不出声：别的 App 在用麦克风时（比如开会），只有亲手敲才会响。Plinth 自己从不收音。";

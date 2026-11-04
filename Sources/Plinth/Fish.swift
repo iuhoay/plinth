@@ -79,6 +79,11 @@ final class Fish {
         didSet { defaults.set(knockAsYouType, forKey: "knockAsYouType"); watchTyping() }
     }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
+    /// While another app listens to a microphone, as in a meeting, only a
+    /// knock by hand sounds; the others swing in silence.
+    var quietWhileMicInUse: Bool {
+        didSet { defaults.set(quietWhileMicInUse, forKey: "quietWhileMicInUse") }
+    }
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
@@ -124,13 +129,14 @@ final class Fish {
         let d = UserDefaults.standard
         d.register(defaults: [
             "interval": 1.0, "volume": 0.8, "size": FishSize.medium.rawValue,
-            "placement": Placement.floating.rawValue,
+            "placement": Placement.floating.rawValue, "quietWhileMicInUse": true,
         ])
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
         stopAt108 = d.bool(forKey: "stopAt108")
         knockAsYouType = d.bool(forKey: "knockAsYouType")
         volume = d.double(forKey: "volume")
+        quietWhileMicInUse = d.bool(forKey: "quietWhileMicInUse")
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -154,7 +160,9 @@ final class Fish {
             bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
-            sound.play(volume: Float(volume), bloom: Float(bloom))
+            if byHand || !quietWhileMicInUse || !Microphone.inUseByOthers() {
+                sound.play(volume: Float(volume), bloom: Float(bloom))
+            }
             if byHand { speak() }
         }
     }

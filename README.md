@@ -60,11 +60,13 @@ Settings has three tabs:
 
 | Tab | Settings |
 | --- | --- |
-| Knocking | Volume; knock as you type; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. |
+| Knocking | Volume; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
 | Why a Fish | The line from the old monastic rules on why the block is a fish. |
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
+
+In a call, the knocks you didn't make yourself go quiet. While another app listens to a microphone, typed knocks and auto-knocks still swing the mallet but make no sound; a knock by hand still sounds. Plinth asks macOS which apps are reading a microphone and never opens one itself, so this needs no microphone permission. It is on by default, and needs macOS 14.2 or later; on earlier versions the setting doesn't appear.
 
 ## Skins
 
