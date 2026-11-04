@@ -393,13 +393,17 @@ final class Fish {
             // The continuous clock keeps burning while the Mac sleeps.
             try? await Task.sleep(for: .seconds(stick.duration))
             guard let self, !Task.isCancelled else { return }
-            incense = nil
+            // The spent stick stays while the ember dies and its last smoke
+            // drifts away under the three knocks. A new stick lit between
+            // the knocks ends this one's.
             for i in 0..<3 {
                 if i > 0 { try? await Task.sleep(for: .seconds(1.6)) }
-                // A new stick lit between the knocks ends this one's.
                 guard !Task.isCancelled else { return }
                 knock(byHand: false)
             }
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            incense = nil
         }
     }
 
