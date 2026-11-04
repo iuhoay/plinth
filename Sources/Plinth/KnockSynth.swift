@@ -1,32 +1,36 @@
 import Foundation
 
-/// The knock, synthesized when a skin is worn. A few decaying modes, a short
-/// mallet burst, and the same strike heard in one wooden hall. Nothing is
-/// stored: a skin names a voice, and the voice is a handful of numbers.
+/// The knock, synthesized as the mallet falls. A few decaying modes, a short
+/// mallet burst, and one wooden hall they all ring in. Nothing is stored: a
+/// skin names a voice, and the voice is a handful of numbers.
 enum KnockSynth {
     static let sampleRate: Float = 44100
-    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic"]
+    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic", "temple"]
 
-    struct Variation {
-        var dry: [Float]
-        var left: [Float]
-        var right: [Float]
-    }
+    /// The force every voice is tuned at, and that tools/knock_synth.py renders.
+    static let referenceForce: Float = 0.6
 
     static func resolve(_ name: String?) -> String {
         guard let name, tones[name] != nil else { return "wood" }
         return name
     }
 
-    /// Three strikes of `name`, so a run of knocks is not one recording played
-    /// again, heard in a room of size `space` (see `Hall.shape`).
-    static func prepare(_ name: String, space: Float = Hall.defaultSpace) -> [Variation] {
+    /// One strike of `name`, never quite the last one. `force` runs from a
+    /// brush (0) to a full blow (1); `place` from -1 to 1 is how far off the
+    /// sweet spot the mallet lands. A harder blow is louder and brighter, a
+    /// soft one rounder; off the spot the hollow speaks less and the shell more.
+    static func knock(_ name: String, force: Float, place: Float) -> [Float] {
         let tone = tones[resolve(name)]!
-        return tone.bases.enumerated().map { i, base in
-            let dry = strike(tone, base: base, seed: tone.seed &+ UInt64(i))
-            let hall = Hall.render(dry, space: space)
-            return Variation(dry: dry, left: hall.left, right: hall.right)
-        }
+        let base = tone.bases.randomElement()! * .random(in: 0.98...1.02)
+        let out = strike(tone, base: base, seed: .random(in: 1...UInt64.max), force: force, place: place)
+        let loud = pow(max(force, 0.05) / referenceForce, 0.8)
+        return out.map { $0 * loud }
+    }
+
+    /// The voice's strike at the reference force, to tune the hall against.
+    static func reference(_ name: String) -> [Float] {
+        let tone = tones[resolve(name)]!
+        return strike(tone, base: tone.bases[0], seed: tone.seed)
     }
 
     private struct Mode {
@@ -195,14 +199,31 @@ enum KnockSynth {
                     Mode(ratio: 3.5, amp: 0.25, tau: 0.02), Mode(ratio: 5.6, amp: 0.10, tau: 0.01)],
             body: Mode(ratio: 0.35, amp: 0.15, tau: 0.05),
             noise: Noise(amp: 0.45, tau: 0.0007, low: 5000, high: 14000), attack: 0.0002),
+        // A big old temple fish under a cloth-wrapped mallet: the wooden fish,
+        // lower and rounder, with the click padded away.
+        "temple": Tone(
+            bases: [470, 458, 482], length: 1.0, seed: 149,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.15), Mode(ratio: 1.52, amp: 0.40, tau: 0.09),
+                    Mode(ratio: 2.31, amp: 0.18, tau: 0.05), Mode(ratio: 3.07, amp: 0.08, tau: 0.03)],
+            body: Mode(ratio: 0.5, amp: 0.55, tau: 0.22),
+            noise: Noise(amp: 0.30, tau: 0.006, low: 600, high: 2600), attack: 0.003, lowpass: 3000),
     ]
 
-    private static func strike(_ tone: Tone, base: Float, seed: UInt64) -> [Float] {
+    private static func strike(_ tone: Tone, base: Float, seed: UInt64,
+                               force: Float = referenceForce, place: Float = 0) -> [Float] {
         var rng = Rng(seed)
         let n = Int(tone.length * sampleRate)
         var out = [Float](repeating: 0, count: n)
         let twoPi = 2 * Float.pi
-        func add(_ ratio: Float, _ amp: Float, _ tau: Float, _ cents: Float, jitter: Bool) {
+        // Both are 1 at the reference force, on the sweet spot.
+        let hard = max(force, 0.05) / referenceForce
+        let edge = min(abs(place), 1)
+        // A harder blow pulls the pitch up a hair; the thinner lip is a little higher.
+        let base = base * (1 + 0.004 * (force - referenceForce)) * (1 + 0.012 * edge)
+        func add(_ ratio: Float, _ amp: Float, _ tau: Float, _ cents: Float, jitter: Bool, body: Bool = false) {
+            // A harder blow is a shorter contact, which reaches the higher modes.
+            var amp = amp * pow(hard, 0.6 * log2(max(ratio, 0.25)))
+            if body { amp *= 1 - 0.4 * edge } else if ratio == 1 { amp *= 1 - 0.3 * edge } else if ratio > 1 { amp *= 1 + 0.5 * edge }
             var f = base * ratio
             if jitter { f *= 1 + rng.gaussian() * 0.004 }
             let phase0 = rng.unit() * twoPi
@@ -226,8 +247,12 @@ enum KnockSynth {
             }
         }
         for mode in tone.modes { add(mode.ratio, mode.amp, mode.tau, mode.cents, jitter: true) }
-        if let body = tone.body { add(body.ratio, body.amp, body.tau, 0, jitter: false) }
-        if let noise = tone.noise {
+        if let body = tone.body { add(body.ratio, body.amp, body.tau, 0, jitter: false, body: true) }
+        if var noise = tone.noise {
+            // The mallet's own click: louder and higher the harder it lands.
+            noise.amp *= pow(hard, 1.2)
+            noise.low *= pow(hard, 0.2)
+            noise.high = min(noise.high * pow(hard, 0.4), 0.45 * sampleRate)
             var burst = [Float](repeating: 0, count: n)
             let decay = exp(-1 / (noise.tau * sampleRate))
             var env: Float = 1
@@ -238,7 +263,7 @@ enum KnockSynth {
             var band = Biquad.bandpass(low: noise.low, high: noise.high)
             for i in 0..<n { out[i] += noise.amp * band.apply(burst[i]) }
         }
-        let attackSamples = max(tone.attack * sampleRate, 1)
+        let attackSamples = max(tone.attack * pow(1 / hard, 0.7) * sampleRate, 1)
         for i in 0..<min(n, Int(attackSamples)) { out[i] *= Float(i) / attackSamples }
         let fade = min(n, Int(0.05 * sampleRate))
         if fade > 1 {
@@ -309,75 +334,89 @@ enum KnockSynth {
             return (1 - 0.65 * t, 2.3 - 1.85 * t, 2 + 3 * t)
         }
 
-        static func render(_ dry: [Float], space: Float) -> (left: [Float], right: [Float]) {
-            let (size, rt60, directToHall) = shape(space)
-            let sr = KnockSynth.sampleRate
-            let length = max(rt60 + 0.7, 0.8)
-            let n = Int(length * sr)
-            var left = [Float](repeating: 0, count: n)
-            var right = [Float](repeating: 0, count: n)
-            // Early reflections off the floor, pillars and walls. No direct sound:
-            // that is the dry knock, played beside this.
-            let taps: [(Float, Float, Float)] = [
-                (13, 0.28, -0.55), (19, 0.24, 0.40), (27, 0.20, -0.25),
-                (34, 0.16, 0.50), (46, 0.13, -0.15), (58, 0.10, 0.30), (71, 0.08, -0.40),
-            ]
-            for (ms, gain, pan) in taps {
-                let d = Int(ms * size / 1000 * sr)
-                guard d < n else { continue }
-                let lGain = gain * sqrt((1 - pan) / 2)
-                let rGain = gain * sqrt((1 + pan) / 2)
-                let count = min(dry.count, n - d)
-                for i in 0..<count {
-                    left[i + d] += dry[i] * lGain
-                    right[i + d] += dry[i] * rGain
+        /// The hall as a stream: every knock goes into the same room, so a run
+        /// of knocks rings together rather than each in a room of its own.
+        struct Room {
+            let rt60: Float
+            // The dry signal's recent past, for the early reflections and the pre-delay.
+            private var line: [Float]
+            private var write = 0
+            private let taps: [(delay: Int, left: Float, right: Float)]
+            private let pre: Int
+            private var combsL: [Comb]
+            private var combsR: [Comb]
+            private var allL = [Allpass(ms: 5.1), Allpass(ms: 1.7)]
+            private var allR = [Allpass(ms: 6.3), Allpass(ms: 2.3)]
+
+            init(space: Float) {
+                let (size, rt60, _) = shape(space)
+                let sr = KnockSynth.sampleRate
+                self.rt60 = rt60
+                // Early reflections off the floor, pillars and walls. No direct
+                // sound: that is the dry knock, heard beside this.
+                let early: [(Float, Float, Float)] = [
+                    (13, 0.28, -0.55), (19, 0.24, 0.40), (27, 0.20, -0.25),
+                    (34, 0.16, 0.50), (46, 0.13, -0.15), (58, 0.10, 0.30), (71, 0.08, -0.40),
+                ]
+                taps = early.map { ms, gain, pan in
+                    (Int(ms * size / 1000 * sr), gain * sqrt((1 - pan) / 2), gain * sqrt((1 + pan) / 2))
                 }
+                pre = Int(0.02 * size * sr)
+                line = [Float](repeating: 0, count: max(taps.map(\.delay).max() ?? 0, pre) + 1)
+                let delays: [Float] = [47, 53, 59, 67, 73, 83, 89, 97]
+                combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: 0.42) }
+                combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: 0.42) }
             }
-            let delays: [Float] = [47, 53, 59, 67, 73, 83, 89, 97]
-            var combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: 0.42) }
-            var combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: 0.42) }
-            var allL = [Allpass(ms: 5.1), Allpass(ms: 1.7)]
-            var allR = [Allpass(ms: 6.3), Allpass(ms: 2.3)]
-            let pre = Int(0.02 * size * sr)
-            for i in 0..<n {
-                let x = i >= pre && i - pre < dry.count ? dry[i - pre] : 0
+
+            /// How long a knock rings on in this room.
+            var tail: Double { Double(max(rt60 + 0.7, 0.8)) }
+
+            mutating func process(_ x: Float) -> (left: Float, right: Float) {
+                let n = line.count
+                line[write] = x
                 var l: Float = 0
                 var r: Float = 0
+                for tap in taps {
+                    let v = line[(write - tap.delay + n) % n]
+                    l += v * tap.left
+                    r += v * tap.right
+                }
+                let delayed = line[(write - pre + n) % n]
+                write = (write + 1) % n
+                var cl: Float = 0
+                var cr: Float = 0
                 for c in combsL.indices {
-                    l += combsL[c].process(x)
-                    r += combsR[c].process(x)
+                    cl += combsL[c].process(delayed)
+                    cr += combsR[c].process(delayed)
                 }
-                l *= 0.15
-                r *= 0.15
+                cl *= 0.15
+                cr *= 0.15
                 for a in allL.indices {
-                    l = allL[a].process(l)
-                    r = allR[a].process(r)
+                    cl = allL[a].process(cl)
+                    cr = allR[a].process(cr)
                 }
-                left[i] += l
-                right[i] += r
+                return (l + cl, r + cr)
             }
-            let fade = Int(min(0.4, length / 3) * sr)
-            for i in 0..<fade {
-                let g = pow(1 - Float(i) / Float(fade), 2)
-                left[n - fade + i] *= g
-                right[n - fade + i] *= g
-            }
+        }
+
+        /// The gain that sets `room`'s tail to `directToHall` below the dry knock
+        /// `dry`, with its loudest moment kept well under the knock's.
+        static func gain(for dry: [Float], space: Float) -> Float {
+            var room = Room(space: space)
+            let directToHall = shape(space).directToHall
+            let n = Int(room.tail * Double(KnockSynth.sampleRate))
             var dryE: Float = 0
             for s in dry { dryE += s * s }
-            dryE /= sr
             var hallE: Float = 0
-            for i in 0..<n { hallE += left[i] * left[i] + right[i] * right[i] }
-            hallE /= 2 * sr
-            guard hallE > 1e-8, dryE > 1e-8 else { return (left, right) }
-            var g = sqrt(dryE / directToHall / hallE)
             var peak: Float = 0
-            for i in 0..<n { peak = max(peak, abs(left[i] * g), abs(right[i] * g)) }
-            if peak > 0.4 { g *= 0.4 / peak }
             for i in 0..<n {
-                left[i] *= g
-                right[i] *= g
+                let (l, r) = room.process(i < dry.count ? dry[i] : 0)
+                hallE += (l * l + r * r) / 2
+                peak = max(peak, abs(l), abs(r))
             }
-            return (left, right)
+            guard hallE > 1e-8, dryE > 1e-8 else { return 0 }
+            let g = sqrt(dryE / directToHall / hallE)
+            return peak * g > 0.4 ? 0.4 / peak : g
         }
     }
 

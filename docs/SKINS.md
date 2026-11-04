@@ -14,7 +14,7 @@ Plinth reads your skins from:
 
 Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
 
-Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
+Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty-one built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
 A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the wooden fish.
 
@@ -114,8 +114,9 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `chime` | A thin slab of hanging stone: a long, soft-edged ring. |
 | `board` | The long wooden fish that hangs outside the hall: lower and longer than `wood`. |
 | `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
+| `temple` | A big old temple fish under a cloth-wrapped mallet: lower and rounder than `wood`, with the click padded away. |
 
-Every voice is heard in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
+Every knock is synthesized as the mallet falls, louder and brighter the harder it lands, and with more of the shell and less of the hollow the further from the strike point. Each voice is tuned at a medium blow on the strike point. Every knock rings on in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
 ## The mallet
 
@@ -182,6 +183,7 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | no | own | own |
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
+| `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.295 | no | own | own |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
 
@@ -191,6 +193,6 @@ None of the built-in skins has blink frames. To add a built-in skin, add its fol
 - [ ] Every frame is the same size, with the figure's base in the same place.
 - [ ] Sequences are numbered from 1 without gaps, and there is no single `blink.png` or `hit.png` beside them.
 - [ ] `skin.json` is valid JSON, and `strike` is two numbers between 0 and 1.
-- [ ] `voice` is one of the twenty names, in lowercase.
+- [ ] `voice` is one of the twenty-one names, in lowercase.
 - [ ] A custom `mallet.png` is square, with the head centre at (0.169, 0.505) and the grip at (0.964, 0.505).
 - [ ] Knock a few times at each fish size: the mallet head meets the figure, and the burst sits where it lands.

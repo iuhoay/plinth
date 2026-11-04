@@ -1,5 +1,5 @@
 """Render Plinth's show-off video: every built-in skin knocked in turn, then all
-twenty played as a drum kit.
+twenty-one played as a drum kit.
 
 Frames are drawn with PIL from the skins' own sprites, with the mallet swing,
 give and burst timed like Sprites.swift. The soundtrack is the skins' real
@@ -29,13 +29,13 @@ CX = W / 2
 # Where things sit: landscape for the 16:9 cut, portrait for 9:16.
 LAY = dict(glow=(1000, 520, 640), floor=1100, floor_r=520, side=720, near=520, far=300,
          quote=820, src=960, en=1060, merit=(540, 380), nomerit=1350, nomerit_en=1430,
-         name=1300, zh=1362, cap=1420, dots=1560, gx=[CX + (c - 1.5) * 255 for c in range(4)],
-         gy=[540, 830, 1120, 1410, 1700], gside=215, cols=4, glabel=19,
+         name=1300, zh=1362, cap=1420, dots=1560, gx=[CX + (c - 1) * 340 for c in range(3)],
+         gy=[290, 545, 800, 1055, 1310, 1565, 1820], gside=185, cols=3, glabel=19,
          end_floor=900, end_side=520, title=1040, tag=1160, tag2=1250, url=1380) if VERT else \
     dict(glow=(560, 620, 420), floor=745, floor_r=700, side=600, near=700, far=420,
          quote=470, src=610, en=680, merit=(660, 420), nomerit=860, nomerit_en=940,
-         name=850, zh=908, cap=962, dots=1030, gx=[CX + (c - 2) * 360 for c in range(5)],
-         gy=[262, 512, 762, 1012], gside=205, cols=5, glabel=20,
+         name=850, zh=908, cap=962, dots=1030, gx=[CX + (c - 3) * 262 for c in range(7)],
+         gy=[330, 640, 950], gside=235, cols=7, glabel=19,
          end_floor=470, end_side=380, title=585, tag=690, tag2=745, url=860)
 
 # name, folder, chinese, voice, glow colour, caption (from KnockSynth's comments)
@@ -60,6 +60,7 @@ SKINS = [
     ("Stone Chime", "stone-chime", "石磬", "chime", (190, 235, 215), "A thin slab of hanging stone, rung with felt."),
     ("Fish Board", "fish-board", "鱼板", "board", (255, 80, 190), "The long wooden fish that hangs outside the hall."),
     ("Mug", "mug", "马克杯", "ceramic", (255, 160, 70), "A spoon on the rim of a full mug."),
+    ("Temple Fish", "temple-fish", "古木鱼", "temple", (236, 183, 88), "A big old temple fish under a cloth-wrapped mallet."),
 ]
 N = len(SKINS)
 
@@ -92,7 +93,7 @@ def font(kind, size):
 SLOT, PARADE = 1.8, 9.0
 OFFSETS = [[.3, .9], [.3, .6, .9], [.3, 1.05], [.3, .9, 1.2], [.3, .45, .6, .9], [.3, .6, .9], [.3],
            [.3, .45, .6, .75, .9], [.3, .9], [.3, .9], [.3, .6, .75, .9], [.3, .9],
-           [.3, .45, .6, .9], [.3], [.3, .9], [.3, 1.05], [.3, .9], [.3, 1.0], [.3, .6, .9], [.3, .45, .9]]
+           [.3, .45, .6, .9], [.3], [.3, .9], [.3, 1.05], [.3, .9], [.3, 1.0], [.3, .6, .9], [.3, .45, .9], [.3, 1.0]]
 RING = (6, 13, 15)                     # the bronzes, given their full hall
 GRID0 = PARADE + N * SLOT + 1.0
 STEP = 60 / 110 / 4
@@ -106,7 +107,7 @@ for k in range(N):
     for o in OFFSETS[k]:
         impacts.append((PARADE + k * SLOT + o, k, 1.0 if k in RING else 0.3, "car"))
 groove = {8: [0, 3, 8, 10], 7: [4, 12], 9: [4], 10: [12], 5: [2, 6, 10, 14], 4: [7, 15], 11: [9],
-          0: [6, 11], 2: [5], 1: [13], 16: [0, 8], 12: [1, 9], 19: [3, 11], 18: [14], 14: [11], 17: [15]}
+          0: [6, 11], 2: [5], 1: [13], 16: [0, 8], 12: [1, 9], 19: [3, 11], 18: [14], 14: [11], 17: [15], 20: [10]}
 for k in range(N):
     impacts.append((GRID0 + k * STEP, k, .25, "grid"))
 for bar in (1, 2, 3):

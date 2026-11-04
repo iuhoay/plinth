@@ -25,7 +25,7 @@ struct FishView: View {
         VStack(spacing: 0) {
             SpriteFish(pack: fish.pack, side: side)
                 .frame(width: side, height: side)
-                .onTapGesture { fish.knock() }
+                .onTapGesture { location in fish.knock(at: location.x / side) }
                 .gesture(DragGesture(minimumDistance: 3)
                     .onChanged { _ in PanelMover.drag() }
                     .onEnded { _ in PanelMover.end() })

@@ -94,6 +94,9 @@ TONES = {
     "ceramic": dict(bases=[1450, 1420, 1480], length=.5, seed=139,
                     modes=[M(1, 1, .09), M(2.1, .45, .05), M(3.5, .25, .02), M(5.6, .10, .01)],
                     body=M(.35, .15, .05), noise=(.45, .0007, 5000, 14000), attack=.0002),
+    "temple": dict(bases=[470, 458, 482], length=1.0, seed=149,
+                   modes=[M(1, 1, .15), M(1.52, .40, .09), M(2.31, .18, .05), M(3.07, .08, .03)],
+                   body=M(.5, .55, .22), noise=(.30, .006, 600, 2600), attack=.003, lowpass=3000),
 }
 
 
@@ -110,7 +113,14 @@ def biquad(f0, q, band):
     return b, [1, -2 * cosw / a0, (1 - alpha) / a0]
 
 
-def strike(tone, base, seed):
+REF_FORCE = 0.6
+
+
+def strike(tone, base, seed, force=REF_FORCE, place=0.0):
+    """One strike, as KnockSynth.strike: force 0 to 1, place -1 to 1 off the sweet spot."""
+    hard = max(force, .05) / REF_FORCE
+    edge = min(abs(place), 1)
+    base = base * (1 + .004 * (force - REF_FORCE)) * (1 + .012 * edge)
     rng = Rng(seed)
     n = int(tone["length"] * SR)
     out = np.zeros(n)
@@ -121,8 +131,15 @@ def strike(tone, base, seed):
         decay = math.exp(-1 / (tau * SR))
         return amp * decay ** idx * np.sin(phase + dp * idx)
 
-    def add(ratio, amp, tau, cents, jitter):
+    def add(ratio, amp, tau, cents, jitter, body=False):
         nonlocal out
+        amp = amp * hard ** (.6 * math.log2(max(ratio, .25)))
+        if body:
+            amp *= 1 - .4 * edge
+        elif ratio == 1:
+            amp *= 1 - .3 * edge
+        elif ratio > 1:
+            amp *= 1 + .5 * edge
         f = base * ratio
         if jitter:
             f *= 1 + rng.gaussian() * 0.004
@@ -135,15 +152,16 @@ def strike(tone, base, seed):
         add(*m, jitter=True)
     if "body" in tone:
         r, a, t, _ = tone["body"]
-        add(r, a, t, 0, False)
+        add(r, a, t, 0, False, body=True)
     if "noise" in tone:
         amp, tau, lo, hi = tone["noise"]
+        amp, lo, hi = amp * hard ** 1.2, lo * hard ** .2, min(hi * hard ** .4, .45 * SR)
         decay = math.exp(-1 / (tau * SR))
         burst = np.array([rng.gaussian() for _ in range(n)]) * decay ** idx
         f0 = math.sqrt(lo * hi)
         b, a = biquad(f0, max(f0 / (hi - lo), .15), True)
         out += amp * lfilter(b, a, burst)
-    att = max(tone["attack"] * SR, 1)
+    att = max(tone["attack"] * (1 / hard) ** .7 * SR, 1)
     k = min(n, int(att))
     out[:k] *= np.arange(k) / att
     fade = min(n, int(.05 * SR))
