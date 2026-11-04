@@ -116,10 +116,12 @@ def biquad(f0, q, band):
 REF_FORCE = 0.6
 
 
-def strike(tone, base, seed, force=REF_FORCE, place=0.0):
-    """One strike, as KnockSynth.strike: force 0 to 1, place -1 to 1 off the sweet spot."""
+def strike(tone, base, seed, force=REF_FORCE, place=0.0, warmth=0.0):
+    """One strike, as KnockSynth.strike: force 0 to 1, place -1 to 1 off the sweet spot,
+    warmth -1 (a winter's morning board) to 1 (a summer's late night), 0 as tuned."""
     hard = max(force, .05) / REF_FORCE
     edge = min(abs(place), 1)
+    w = min(max(warmth, -1), 1)
     base = base * (1 + .004 * (force - REF_FORCE)) * (1 + .012 * edge)
     rng = Rng(seed)
     n = int(np.float32(tone["length"]) * np.float32(SR))  # in Float, as Swift counts it
@@ -140,6 +142,12 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0):
             amp *= 1 - .3 * edge
         elif ratio > 1:
             amp *= 1 + .5 * edge
+        if body:
+            amp *= 1 + .12 * w
+            tau *= 1 + .08 * w
+        elif ratio > 1:
+            amp *= ratio ** (-.08 * w)
+            tau *= ratio ** (-.04 * w)
         f = base * ratio
         if jitter:
             f *= 1 + rng.gaussian() * 0.004
@@ -156,6 +164,7 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0):
     if "noise" in tone:
         amp, tau, lo, hi = tone["noise"]
         amp, lo, hi = amp * hard ** 1.2, lo * hard ** .2, min(hi * hard ** .4, .45 * SR)
+        amp, lo, hi = amp * (1 - .06 * w), lo * 2 ** (-.06 * w), min(hi * 2 ** (-.12 * w), .45 * SR)
         decay = math.exp(-1 / (tau * SR))
         burst = np.array([rng.gaussian() for _ in range(n)]) * decay ** idx
         f0 = math.sqrt(lo * hi)
@@ -226,7 +235,8 @@ def allpass(x, ms, fb=.5):
     return delayed - fb * x
 
 
-def hall(dry):
+def hall(dry, warmth=0.0):
+    damp = .42 + .06 * min(max(warmth, -1), 1)
     n = int(3 * SR)
     L = np.zeros(n); R = np.zeros(n)
     for ms, g, pan in [(13, .28, -.55), (19, .24, .40), (27, .20, -.25), (34, .16, .50), (46, .13, -.15), (58, .10, .30), (71, .08, -.40)]:
@@ -236,8 +246,8 @@ def hall(dry):
         R[d:d + c] += dry[:c] * g * math.sqrt((1 + pan) / 2)
     pre = int(.02 * SR)
     x = np.zeros(n); x[pre:pre + len(dry)] = dry[: n - pre]
-    l = sum(comb(x, ms) for ms in [47, 53, 59, 67, 73, 83, 89, 97]) * .15
-    r = sum(comb(x, ms + 1.7) for ms in [47, 53, 59, 67, 73, 83, 89, 97]) * .15
+    l = sum(comb(x, ms, damp=damp) for ms in [47, 53, 59, 67, 73, 83, 89, 97]) * .15
+    r = sum(comb(x, ms + 1.7, damp=damp) for ms in [47, 53, 59, 67, 73, 83, 89, 97]) * .15
     for ms in [5.1, 1.7]:
         l = allpass(l, ms)
     for ms in [6.3, 2.3]:

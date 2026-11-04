@@ -19,18 +19,45 @@ enum KnockSynth {
     /// brush (0) to a full blow (1); `place` from -1 to 1 is how far off the
     /// sweet spot the mallet lands. A harder blow is louder and brighter, a
     /// soft one rounder; off the spot the hollow speaks less and the shell more.
-    static func knock(_ name: String, force: Float, place: Float) -> [Float] {
+    /// `warmth` is the hour and the season, as `warmth(at:)` gives it.
+    static func knock(_ name: String, force: Float, place: Float, warmth: Float = 0) -> [Float] {
         let tone = tones[resolve(name)]!
         let base = tone.bases.randomElement()! * .random(in: 0.98...1.02)
-        let out = strike(tone, base: base, seed: .random(in: 1...UInt64.max), force: force, place: place)
+        let out = strike(tone, base: base, seed: .random(in: 1...UInt64.max), force: force, place: place, warmth: warmth)
         let loud = pow(max(force, 0.05) / referenceForce, 0.8)
         return out.map { $0 * loud }
     }
 
     /// The voice's strike at the reference force, to tune the hall against.
+    /// It is heard at no hour: its warmth is 0, the voice as tuned.
     static func reference(_ name: String) -> [Float] {
         let tone = tones[resolve(name)]!
         return strike(tone, base: tone.bases[0], seed: tone.seed)
+    }
+
+    /// How the hour and the season temper the wood and the hall it rings in:
+    /// -1 the thin, cold air of the morning board (早板) at four on a winter's
+    /// dawn, clear and a little bright; 1 the close, warm air of a summer's
+    /// late night, the wood rounder and the hall softer. 0 is the voice as
+    /// tuned. It moves so slowly that no knock sounds unlike the one before.
+    static func warmth(at date: Date, calendar: Calendar = .current) -> Float {
+        let c = calendar.dateComponents([.hour, .minute, .second], from: date)
+        let hour = Float(c.hour ?? 12) + Float(c.minute ?? 0) / 60 + Float(c.second ?? 0) / 3600
+        // The day: clearest at the morning board, warming through the day and
+        // the evening board (晚板) into the night, and turning back before dawn.
+        let day: [(hour: Float, warmth: Float)] = [(0, 1), (4, -1), (8, -0.5), (13, 0), (18, 0.5), (21, 0.85), (24, 1)]
+        var daily: Float = 1
+        for (a, b) in zip(day, day.dropFirst()) where hour < b.hour {
+            let t = (hour - a.hour) / (b.hour - a.hour)
+            daily = a.warmth + (b.warmth - a.warmth) * t * t * (3 - 2 * t)
+            break
+        }
+        // The year, by the sun rather than the calendar: coldest about 大寒, a
+        // month after the winter solstice of 2000, and warmest about 大暑.
+        let year = 365.2422 * 86400
+        let greatCold = 977_405_820 + 30 * 86400.0
+        let seasonal = Float(-cos(2 * Double.pi * (date.timeIntervalSince1970 - greatCold) / year))
+        return min(max(0.7 * daily + 0.3 * seasonal, -1), 1)
     }
 
     private struct Mode {
@@ -210,7 +237,7 @@ enum KnockSynth {
     ]
 
     private static func strike(_ tone: Tone, base: Float, seed: UInt64,
-                               force: Float = referenceForce, place: Float = 0) -> [Float] {
+                               force: Float = referenceForce, place: Float = 0, warmth: Float = 0) -> [Float] {
         var rng = Rng(seed)
         let n = Int(tone.length * sampleRate)
         var out = [Float](repeating: 0, count: n)
@@ -220,10 +247,22 @@ enum KnockSynth {
         let edge = min(abs(place), 1)
         // A harder blow pulls the pitch up a hair; the thinner lip is a little higher.
         let base = base * (1 + 0.004 * (force - referenceForce)) * (1 + 0.012 * edge)
+        // Warm, close air, and wood that has taken some of it in: the hollow
+        // speaks a little longer, and the upper modes a little less and briefer.
+        // Cold, dry air the other way. All of it is 1 at warmth 0.
+        let w = min(max(warmth, -1), 1)
         func add(_ ratio: Float, _ amp: Float, _ tau: Float, _ cents: Float, jitter: Bool, body: Bool = false) {
             // A harder blow is a shorter contact, which reaches the higher modes.
             var amp = amp * pow(hard, 0.6 * log2(max(ratio, 0.25)))
             if body { amp *= 1 - 0.4 * edge } else if ratio == 1 { amp *= 1 - 0.3 * edge } else if ratio > 1 { amp *= 1 + 0.5 * edge }
+            var tau = tau
+            if body {
+                amp *= 1 + 0.12 * w
+                tau *= 1 + 0.08 * w
+            } else if ratio > 1 {
+                amp *= pow(ratio, -0.08 * w)
+                tau *= pow(ratio, -0.04 * w)
+            }
             var f = base * ratio
             if jitter { f *= 1 + rng.gaussian() * 0.004 }
             let phase0 = rng.unit() * twoPi
@@ -253,6 +292,10 @@ enum KnockSynth {
             noise.amp *= pow(hard, 1.2)
             noise.low *= pow(hard, 0.2)
             noise.high = min(noise.high * pow(hard, 0.4), 0.45 * sampleRate)
+            // A dull, warm room takes the edge off the click; a cold one sharpens it.
+            noise.amp *= 1 - 0.06 * w
+            noise.low *= pow(2, -0.06 * w)
+            noise.high = min(noise.high * pow(2, -0.12 * w), 0.45 * sampleRate)
             var burst = [Float](repeating: 0, count: n)
             let decay = exp(-1 / (noise.tau * sampleRate))
             var env: Float = 1
@@ -319,6 +362,13 @@ enum KnockSynth {
         /// The hall the knocks have always rung in, and tools/knock_synth.py renders.
         static let defaultSpace: Float = 0.7
 
+        /// How much of its highs the hall's wood soaks up on each pass, at a
+        /// `KnockSynth.warmth`: a little less in cold dry air, a little more in
+        /// warm close air. 0.42 at warmth 0, the hall as tuned.
+        static func damp(warmth: Float) -> Float {
+            0.42 + 0.06 * min(max(warmth, -1), 1)
+        }
+
         /// The room at `space`: 0 a small meditation room (禅房), `defaultSpace`
         /// a large hall, 1 a larger one (大殿). `size` scales its reflections'
         /// distances, `rt60` is how long its tail rings, and `directToHall` how
@@ -348,7 +398,7 @@ enum KnockSynth {
             private var allL = [Allpass(ms: 5.1), Allpass(ms: 1.7)]
             private var allR = [Allpass(ms: 6.3), Allpass(ms: 2.3)]
 
-            init(space: Float) {
+            init(space: Float, damp: Float = Hall.damp(warmth: 0)) {
                 let (size, rt60, _) = shape(space)
                 let sr = KnockSynth.sampleRate
                 self.rt60 = rt60
@@ -364,8 +414,20 @@ enum KnockSynth {
                 pre = Int(0.02 * size * sr)
                 line = [Float](repeating: 0, count: max(taps.map(\.delay).max() ?? 0, pre) + 1)
                 let delays: [Float] = [47, 53, 59, 67, 73, 83, 89, 97]
-                combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: 0.42) }
-                combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: 0.42) }
+                combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: damp) }
+                combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: damp) }
+            }
+
+            /// The hall's damping, as `Hall.damp(warmth:)`. It can change as
+            /// the room rings, so the tail carries on.
+            var damp: Float {
+                get { combsL[0].damp }
+                set {
+                    for c in combsL.indices {
+                        combsL[c].damp = newValue
+                        combsR[c].damp = newValue
+                    }
+                }
             }
 
             /// How long a knock rings on in this room.
@@ -425,7 +487,7 @@ enum KnockSynth {
         var index = 0
         var filter: Float = 0
         let feedback: Float
-        let damp: Float
+        var damp: Float
 
         init(ms: Float, rt60: Float, damp: Float) {
             let delay = max(Int(ms / 1000 * KnockSynth.sampleRate), 1)

@@ -730,6 +730,8 @@ final class KnockSound {
     private var voice = ""
     private var space: Float = -1
     private var tail = 3.0
+    /// The hour and the season the last knock was made in.
+    private var warmth: Float = 0
     private var ringsUntil = 0.0
     private var quiet: Task<Void, Never>?
     /// Where the fish sits on its screen, and whether the knock goes to headphones.
@@ -775,7 +777,7 @@ final class KnockSound {
         let next = KnockSynth.resolve(name)
         guard next != voice || space != self.space else { return }
         // A new voice keeps the room ringing; only a new room starts it afresh.
-        let room = space != self.space ? KnockSynth.Hall.Room(space: space) : nil
+        let room = space != self.space ? KnockSynth.Hall.Room(space: space, damp: KnockSynth.Hall.damp(warmth: warmth)) : nil
         voice = next
         self.space = space
         if let room { tail = room.tail }
@@ -806,11 +808,17 @@ final class KnockSound {
         place(x: spot.x, y: spot.y)
     }
 
-    /// Start synthesizing one knock of the worn voice while the mallet falls.
+    /// Start synthesizing one knock of the worn voice while the mallet falls,
+    /// for the hour and the season, and temper the hall to match.
     func synthesize(force: Float, place: Float) -> Task<[Float], Never> {
         let voice = voice
+        let warmth = KnockSynth.warmth(at: .now)
+        if abs(warmth - self.warmth) > 0.005 {
+            self.warmth = warmth
+            mix.temper(damp: KnockSynth.Hall.damp(warmth: warmth))
+        }
         return Task.detached(priority: .userInitiated) {
-            KnockSynth.knock(voice, force: force, place: place)
+            KnockSynth.knock(voice, force: force, place: place, warmth: warmth)
         }
     }
 
@@ -871,6 +879,7 @@ private final class KnockMix: @unchecked Sendable {
         var spent: [Voice] = []
         var room: KnockSynth.Hall.Room?
         var gain: Float?
+        var damp: Float?
         var oldRoom: KnockSynth.Hall.Room?
     }
 
@@ -907,6 +916,11 @@ private final class KnockMix: @unchecked Sendable {
             defer { box.oldRoom = nil }
             return box.oldRoom
         }
+    }
+
+    /// Change how much of its highs the hall soaks up, as it rings.
+    func temper(damp: Float) {
+        inbox.withLock { $0.damp = damp }
     }
 
     func add(_ knock: [Float], dry: Float, send: Float) {
@@ -968,6 +982,10 @@ private final class KnockMix: @unchecked Sendable {
             if let g = box.gain {
                 gain = g
                 box.gain = nil
+            }
+            if let d = box.damp {
+                room.damp = d
+                box.damp = nil
             }
         }
         guard let l = left.mData?.assumingMemoryBound(to: Float.self),
