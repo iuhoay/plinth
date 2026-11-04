@@ -53,8 +53,8 @@ final class TypingWatcher {
         lastPress = now
     }
 
-    /// When the keyboard itself last sent an event of `type`, on the uptime clock.
-    private static func lastEvent(_ type: CGEventType) -> TimeInterval {
+    /// When the keyboard or mouse itself last sent an event of `type`, on the uptime clock.
+    static func lastEvent(_ type: CGEventType) -> TimeInterval {
         ProcessInfo.processInfo.systemUptime
             - CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: type)
     }

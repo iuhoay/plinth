@@ -147,8 +147,10 @@ final class Fish {
     /// The stick of incense burning beside the fish, if one is lit.
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
-    /// The fish calling you back, while it sounds. See `call()`.
+    /// The fish calling you back, while it sounds, and when its first knock
+    /// landed, from which a key or click anywhere ends the call. See `call()`.
     @ObservationIgnored private var callTask: Task<Void, Never>?
+    @ObservationIgnored private var callLanded = Double.infinity
     /// When the last key went down, and when the stretch of typing it belongs
     /// to began, on a clock that keeps going while the Mac sleeps, since a
     /// night's sleep is a rest. Kept only for the bell, never stored.
@@ -405,6 +407,25 @@ final class Fish {
         }
     }
 
+    /// Knock the ink fish painted on the About scroll: always the ink voice,
+    /// heard through paper, whatever the fish on the desktop wears, and that
+    /// fish's mallet stays still. Like a preview, it always sounds, and a call
+    /// ends: you are here.
+    func knockPainting() {
+        endCall()
+        guard volume > 0 else { return }
+        sound.warm(for: 0)
+        let knock = sound.synthesize(force: 0.58 + .random(in: -0.07...0.07), place: .random(in: -0.2...0.2), voice: "ink")
+        Task {
+            let samples = await knock.value
+            // It rings in the same hall as the desktop fish.
+            let now = ProcessInfo.processInfo.systemUptime
+            let bloom = Self.bloom(afterSilence: now - lastImpact)
+            lastImpact = now
+            sound.play(samples, volume: Float(volume), bloom: Float(bloom))
+        }
+    }
+
     /// How hard and where a knock lands. A firm click lands harder and a deep
     /// one hardest; a hand in a hurry lands lighter, and a typed key lighter
     /// still. A click off the strike point lands toward the edge.
@@ -460,9 +481,10 @@ final class Fish {
     /// line, on the first knock by hand each day (from 4 a.m.). After the last, it only knocks.
     private func speak() {
         let said = defaults.integer(forKey: "said")
-        let today = Self.today()
         // An unseen fish has no words either; they wait until it is seen.
-        guard placement != .unseen, said < Zen.sayings.count, defaults.string(forKey: "lastSaidDay") != today else { return }
+        guard placement != .unseen, said < Zen.sayings.count else { return }
+        let today = Self.today()
+        guard defaults.string(forKey: "lastSaidDay") != today else { return }
         defaults.set(said + 1, forKey: "said")
         defaults.set(today, forKey: "lastSaidDay")
         let saying = Zen.sayings[said]
@@ -639,22 +661,32 @@ final class Fish {
 
     /// Call you back, as a stick of incense does when it goes out: three
     /// knocks. So they are heard over auto-knock or typing, those keep quiet
-    /// for the call, and the three come after a quiet, which a knock rings
-    /// the fuller for. Auto-knock picks up again after. A call that comes
+    /// for the call, and the three come after a quiet, each ringing in full
+    /// through the hall. Auto-knock picks up again after. A call that comes
     /// while one sounds is the same call. Like auto-knock, it is never answered.
+    /// Once the first knock has sounded, a key or a click anywhere means you
+    /// are back, and the rest of the call keeps quiet. One from before it,
+    /// such as the key that started a build, doesn't count.
     func call() {
         guard callTask == nil else { return }
         autoTask?.cancel()
         autoTask = nil
+        callLanded = .infinity
         callTask = Task { [weak self] in
             for _ in 0..<3 {
                 try? await Task.sleep(for: .seconds(Self.callBeat))
                 guard let self, !Task.isCancelled else { return }
-                strike(byHand: false)
+                let answered = max(TypingWatcher.lastEvent(.keyDown), TypingWatcher.lastEvent(.leftMouseDown))
+                if answered > callLanded { return endCall() }
+                strike(byHand: false, full: true)
+                if callLanded == .infinity {
+                    callLanded = ProcessInfo.processInfo.systemUptime + Self.impactDelay
+                }
             }
             try? await Task.sleep(for: .seconds(Self.callLength - Self.callBeat * 3))
             guard let self, !Task.isCancelled else { return }
             callTask = nil
+            callLanded = .infinity
             restartAuto()
         }
     }
@@ -664,6 +696,7 @@ final class Fish {
         guard let callTask else { return }
         callTask.cancel()
         self.callTask = nil
+        callLanded = .infinity
         restartAuto()
     }
 
@@ -675,6 +708,9 @@ final class Fish {
     /// once you have typed long enough without a rest, the bell knocks instead.
     private func typed() {
         guard !recordingMalletKey else { return }
+        if callTask != nil, ProcessInfo.processInfo.systemUptime > callLanded {
+            endCall()
+        }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
         if now - lastTyped > Self.rest { typingSince = now }
         lastTyped = now
@@ -863,10 +899,10 @@ final class KnockSound {
         place(across: spot.across, up: spot.up)
     }
 
-    /// Start synthesizing one knock of the worn voice while the mallet falls,
-    /// for the hour and the season, and temper the hall to match.
-    func synthesize(force: Float, place: Float) -> Task<[Float], Never> {
-        let voice = voice
+    /// Start synthesizing one knock of the worn voice, or of `voice`, while the
+    /// mallet falls, for the hour and the season, and temper the hall to match.
+    func synthesize(force: Float, place: Float, voice: String? = nil) -> Task<[Float], Never> {
+        let voice = voice ?? self.voice
         let warmth = KnockSynth.warmth(at: .now)
         if abs(warmth - self.warmth) > 0.005 {
             self.warmth = warmth
