@@ -42,5 +42,11 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/rubycatco/plinth/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>FAR8hK4D/U5mivzBJSvEdEX0X3/C8brW2D2PIVGVk4Y=</string>
 </dict>
 </plist>

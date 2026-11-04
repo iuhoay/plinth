@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fish.onWindowChange = { [weak self] in self?.layoutPanel() }
         layoutPanel()
         panel.orderFrontRegardless()
+        Updates.shared.start()
     }
 
     /// `plinth://knock` knocks once, so scripts and other apps can knock.

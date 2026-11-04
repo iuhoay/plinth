@@ -64,9 +64,26 @@ private struct KnockingSettings: View {
                 }
                 Toggle("Launch at login", isOn: $fish.launchAtLogin)
             }
+            if Updates.shared.available {
+                UpdateSettings()
+            }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct UpdateSettings: View {
+    var body: some View {
+        @Bindable var updates = Updates.shared
+        Section {
+            Toggle("Check for updates automatically", isOn: $updates.checksAutomatically)
+        } header: {
+            Text("Updates")
+        } footer: {
+            Text("Once a day, Plinth asks GitHub whether there is a newer version, and asks you before installing it. Nothing about you or your Mac is sent.")
+                .settingsFootnote()
+        }
     }
 }
 
