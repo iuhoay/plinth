@@ -14,7 +14,7 @@ Plinth reads your skins from:
 
 Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images or folders into it. Copying replaces any skin of the same name that is already there.
 
-Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twelve built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
+Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
 A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the wooden fish.
 
@@ -90,6 +90,14 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `stone` | Dull and gritty, with the ring soaked up. |
 | `piston` | Steel on steel: a short clack. |
 | `crt` | A plastic case and a faint tick. |
+| `bead` | Rosewood beads knocked together: a small, dry clack. |
+| `plate` | A flat bronze plate under a leather mallet: a soft, long, slightly clashing ring. |
+| `porcelain` | Thin glazed porcelain: high, bright, and clean. |
+| `bell` | An almond-shaped bronze bell: two notes a minor third apart, damped sooner than a round bell. |
+| `stamp` | A stone seal pressed onto paper: a short, dull thud. |
+| `chime` | A thin slab of hanging stone: a long, soft-edged ring. |
+| `board` | The long wooden fish that hangs outside the hall: lower and longer than `wood`. |
+| `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
 
 Every voice is heard in the same wooden hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
@@ -139,17 +147,25 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | Folder | Name | 中文名 | Voice | Strike | Hit frame | Mallet | Burst |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | no | shared | shared |
+| `abacus` | Abacus | 算盘 | `bead` | 0.5, 0.325 | yes | own | own |
 | `bamboo-block` | Bamboo Block | 竹节 | `bamboo` | 0.52, 0.485 | no | own | own |
+| `bianzhong` | Bianzhong | 编钟 | `bell` | 0.56, 0.66 | yes | own | own |
 | `cartoon-fish` | Cartoon Fish | 卡通鱼 | `cartoon` | 0.625, 0.296 | no | own | own |
+| `cloud-gong` | Cloud Gong | 云板 | `plate` | 0.56, 0.6 | yes | own | own |
 | `crt-terminal` | CRT Terminal | CRT 终端 | `crt` | 0.52, 0.395 | yes | own | own |
+| `fish-board` | Fish Board | 鱼板 | `board` | 0.56, 0.69 | no | own | shared |
 | `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | no | own | own |
 | `jade-fish` | Jade Fish | 玉鱼 | `jade` | 0.625, 0.304 | no | own | own |
 | `moss-stone` | Moss Stone | 苔石 | `stone` | 0.52, 0.375 | no | own | own |
+| `mug` | Mug | 马克杯 | `ceramic` | 0.56, 0.36 | no | own | own |
 | `piston` | Piston | 活塞 | `piston` | 0.52, 0.39 | yes | own | own |
 | `pixel-fish` | Pixel Fish | 像素鱼 | `pixel` | 0.625, 0.326 | no | own | own |
+| `porcelain-fish` | Porcelain Fish | 青花瓷鱼 | `porcelain` | 0.625, 0.31 | no | own | own |
 | `red-lacquer` | Red Lacquer | 朱漆 | `lacquer` | 0.625, 0.306 | no | own | own |
+| `seal` | Seal | 印章 | `stamp` | 0.55, 0.39 | no | own | own |
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | no | own | own |
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
+| `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
 
@@ -159,6 +175,6 @@ None of the built-in skins has blink frames. To add a built-in skin, add its fol
 - [ ] Every frame is the same size, with the figure's base in the same place.
 - [ ] Sequences are numbered from 1 without gaps, and there is no single `blink.png` or `hit.png` beside them.
 - [ ] `skin.json` is valid JSON, and `strike` is two numbers between 0 and 1.
-- [ ] `voice` is one of the twelve names, in lowercase.
+- [ ] `voice` is one of the twenty names, in lowercase.
 - [ ] A custom `mallet.png` is square, with the head centre at (0.169, 0.505) and the grip at (0.964, 0.505).
 - [ ] Knock a few times at each fish size: the mallet head meets the figure, and the burst sits where it lands.

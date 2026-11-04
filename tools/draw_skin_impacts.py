@@ -1,7 +1,9 @@
 """Draw quiet impact pulses for the desk-object skins.
 
-The key gets a rounded-square cyan pulse; bamboo, stone, piston and CRT get
-thin oval ripples in mint, moss green, amber and phosphor green. All are
+The key and the abacus get rounded-square pulses in cyan and gold; bamboo,
+stone, piston, CRT, the cloud gong, the bianzhong and the stone chime get thin
+oval ripples in mint, moss green, amber, phosphor green, patina teal, bronze
+gold and pale jade. All are
 transparent, rendered at 1024 px and downsampled to 256, like the bowl's ripple.
 
 The images are original and released under CC0 (the code itself is MIT).
@@ -25,8 +27,12 @@ for name, color in [
     ("moss-stone", (186, 203, 139)),
     ("piston", (248, 178, 87)),
     ("crt-terminal", (101, 239, 149)),
+    ("abacus", (240, 198, 112)),
+    ("cloud-gong", (168, 250, 232)),
+    ("bianzhong", (244, 216, 140)),
+    ("stone-chime", (206, 238, 224)),
 ]:
-    if name == "space-key":
+    if name in ("space-key", "abacus"):
         # A rounded square, flattened to sit on the top of the keycap.
         r = (dx ** 4 + (dy / 0.60) ** 4) ** 0.25
     else:
