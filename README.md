@@ -25,6 +25,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 - **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings.
 - **Auto-knock.** Let it keep a steady rhythm (every 0.4 to 4 seconds), with an option to stop after 108 knocks, one full turn of a mala.
+- **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock as it's lit, quiet while it burns down beside the fish, three knocks as it goes out. No clock, no count.
 - **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
@@ -51,6 +52,7 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Knock | Knocks once. |
 | Auto-Knock | Knocks on its own, at the **Pace** you pick: every 2, 1, or 0.5 seconds. |
 | Knock as You Type | Knocks once for each key you press, in any app. |
+| Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
 | Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
 | Skin | Picks a skin, adds your own, or opens the skins folder. |
 | Settings… | Opens Settings. |
