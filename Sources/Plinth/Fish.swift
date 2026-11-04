@@ -278,6 +278,8 @@ final class Fish {
             incense = nil
             for i in 0..<3 {
                 if i > 0 { try? await Task.sleep(for: .seconds(1.6)) }
+                // A new stick lit between the knocks ends this one's.
+                guard !Task.isCancelled else { return }
                 knock(byHand: false)
             }
         }
