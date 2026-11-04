@@ -8,6 +8,14 @@
 # notarization requires, and keeps its update feed (an ad hoc build doesn't
 # update itself). PLINTH_VERSION and PLINTH_BUILD override the version
 # (e.g. 1.2.0) and build number in Info.plist.
+#
+# PLINTH_APPSTORE=1 builds for the Mac App Store instead: sandboxed, without
+# Sparkle or an update feed. Ad hoc signed, it runs sandboxed on your own Mac.
+# With PLINTH_SIGN_IDENTITY set to an "Apple Distribution: Name (TEAMID)"
+# certificate, it also needs PLINTH_PROVISIONING_PROFILE, the app's Mac App
+# Store provisioning profile, and PLINTH_INSTALLER_IDENTITY, a "3rd Party Mac
+# Developer Installer: Name (TEAMID)" certificate, and writes build/Plinth.pkg
+# to upload.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -20,9 +28,12 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Plinth"
 cp -R App/Resources/* "$APP/Contents/Resources/"
 cp App/Info.plist "$APP/Contents/Info.plist"
-mkdir -p "$APP/Contents/Frameworks"
-# ditto keeps the framework's relative symlinks.
-ditto "$(dirname "$BIN")/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+APPSTORE=${PLINTH_APPSTORE:-}
+if [ "$APPSTORE" != 1 ]; then
+  mkdir -p "$APP/Contents/Frameworks"
+  # ditto keeps the framework's relative symlinks.
+  ditto "$(dirname "$BIN")/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+fi
 
 # Shortcuts finds the Knock action through App Intents metadata. Xcode
 # extracts it when it builds an app; SwiftPM doesn't, so extract it here from
@@ -58,7 +69,34 @@ iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 # Sign from the inside out, never with --deep.
 SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
 IDENTITY="${PLINTH_SIGN_IDENTITY:-}"
-if [ -n "$IDENTITY" ]; then
+PKG=""
+if [ "$APPSTORE" = 1 ]; then
+  # The App Store updates the app itself.
+  for key in SUFeedURL SUPublicEDKey SUEnableAutomaticChecks; do
+    plutil -remove "$key" "$APP/Contents/Info.plist"
+  done
+  if [ -n "$IDENTITY" ]; then
+    PROFILE="${PLINTH_PROVISIONING_PROFILE:?Set PLINTH_PROVISIONING_PROFILE to the Mac App Store provisioning profile}"
+    INSTALLER="${PLINTH_INSTALLER_IDENTITY:?Set PLINTH_INSTALLER_IDENTITY to a 3rd Party Mac Developer Installer certificate}"
+    cp "$PROFILE" "$APP/Contents/embedded.provisionprofile"
+    # The signature must also carry the app and team identifiers the profile grants.
+    SCRATCH=$(mktemp -d)
+    security cms -D -i "$PROFILE" > "$SCRATCH/profile.plist"
+    cp App/Plinth.entitlements "$SCRATCH/Plinth.entitlements"
+    for key in com.apple.application-identifier com.apple.developer.team-identifier; do
+      value=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:$key" "$SCRATCH/profile.plist")
+      /usr/libexec/PlistBuddy -c "Add :$key string $value" "$SCRATCH/Plinth.entitlements"
+    done
+    codesign --force --options runtime --timestamp --sign "$IDENTITY" \
+      --entitlements "$SCRATCH/Plinth.entitlements" "$APP"
+    PKG=build/Plinth.pkg
+    productbuild --component "$APP" /Applications --sign "$INSTALLER" "$PKG"
+    SIGNER="$IDENTITY"
+  else
+    codesign --force --sign - --entitlements App/Plinth.entitlements "$APP"
+    SIGNER="ad hoc, sandboxed"
+  fi
+elif [ -n "$IDENTITY" ]; then
   SIGN=(codesign --force --options runtime --timestamp --sign "$IDENTITY")
   "${SIGN[@]}" "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
   "${SIGN[@]}" --preserve-metadata=entitlements "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
@@ -80,3 +118,4 @@ fi
 codesign --verify --deep --strict "$APP"
 VERSION=$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")
 echo "Built $APP $VERSION, signed $SIGNER"
+if [ -n "$PKG" ]; then echo "Built $PKG to upload to App Store Connect"; fi

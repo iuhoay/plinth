@@ -96,6 +96,28 @@ swift package resolve
 
 On another Mac, `generate_keys --account plinth -f plinth-update-key.txt` imports it. Never commit it. If it leaks, rotate it the same way.
 
+## Mac App Store build
+
+`PLINTH_APPSTORE=1` builds the app for the Mac App Store: it runs in the App Sandbox with [`App/Plinth.entitlements`](../App/Plinth.entitlements), leaves out Sparkle, and has no update feed or update menu item, since the App Store updates it. Without a certificate it is signed ad hoc, which is enough to try the sandboxed app on your own Mac:
+
+```sh
+PLINTH_APPSTORE=1 ./scripts/build_app.sh
+```
+
+To upload, you need the app's Mac App Store provisioning profile and two certificates, "Apple Distribution" and "3rd Party Mac Developer Installer" (create them in Xcode under Settings → Accounts → Manage Certificates):
+
+```sh
+PLINTH_APPSTORE=1 \
+PLINTH_VERSION=1.2.0 \
+PLINTH_BUILD=$(git rev-list --count HEAD) \
+PLINTH_SIGN_IDENTITY="Apple Distribution: Your Name (TEAMID)" \
+PLINTH_PROVISIONING_PROFILE=Plinth_Mac_App_Store.provisionprofile \
+PLINTH_INSTALLER_IDENTITY="3rd Party Mac Developer Installer: Your Name (TEAMID)" \
+./scripts/build_app.sh
+```
+
+The script embeds the profile, signs the app with the sandbox entitlements plus the app and team identifiers from the profile, and writes `build/Plinth.pkg`. Upload it with Transporter or `xcrun altool --upload-package`. Every upload needs a higher `PLINTH_BUILD` than the last.
+
 ## Building a signed image locally
 
 Save the notarization key in your keychain once, then point the script at your certificate:
