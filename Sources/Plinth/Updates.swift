@@ -1,5 +1,20 @@
 import AppKit
 import Observation
+#if APPSTORE
+
+/// The App Store updates Plinth, so this build never updates itself and
+/// shows no update menu item or setting.
+@MainActor @Observable
+final class Updates {
+    static let shared = Updates()
+    let waiting = false
+    let canCheck = false
+    let available = false
+    var checksAutomatically = false
+    func start() {}
+    func check() {}
+}
+#else
 import Sparkle
 
 /// New versions from GitHub releases, through Sparkle. Only builds signed for
@@ -65,3 +80,4 @@ extension Updates: @preconcurrency SPUStandardUserDriverDelegate {
         waiting = false
     }
 }
+#endif
