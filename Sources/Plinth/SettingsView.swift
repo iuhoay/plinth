@@ -210,13 +210,16 @@ private struct SkinTile: View {
 
     /// The figure alone, without the empty air its frame keeps for the
     /// mallet, so every tile shows the skin rather than space. Kept, as
-    /// finding the figure reads every pixel. The source is held too, so its
-    /// identity is never reused by another image.
-    private static var thumbnails: [ObjectIdentifier: (source: NSImage, thumbnail: NSImage)] = [:]
+    /// finding the figure reads every pixel. Kept on the source image itself,
+    /// so it goes when the skins are read afresh and the old images do.
+    private static var thumbnailKey: UInt8 = 0
     private static func thumbnail(_ idle: NSImage) -> NSImage {
-        if let done = thumbnails[ObjectIdentifier(idle)] { return done.thumbnail }
+        if let done = objc_getAssociatedObject(idle, &thumbnailKey) as? NSImage { return done }
         let made = idle.menuBarIcon(side: 152)
-        thumbnails[ObjectIdentifier(idle)] = (idle, made)
+        // An image that could not be cropped comes back as itself; holding it would keep it forever.
+        if made !== idle {
+            objc_setAssociatedObject(idle, &thumbnailKey, made, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
         return made
     }
 }
