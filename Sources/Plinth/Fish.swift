@@ -93,6 +93,8 @@ final class Fish {
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinFileWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinRefresh: Task<Void, Never>?
+    /// The files each of `skins` was read from, as they were then.
+    @ObservationIgnored private var skinStamps: [String: [FileStamp]] = [:]
     /// When the mallet last met the wood, on the system uptime clock.
     @ObservationIgnored private var lastImpact = -Double.infinity
 
@@ -325,13 +327,22 @@ final class Fish {
         return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
     }
 
+    /// Read the skins folder. A skin whose files are as they were is kept, not
+    /// decoded again, so choosing a skin costs only a look at the folder.
     func refreshSkins() {
         let files = (try? FileManager.default.contentsOfDirectory(atPath: Self.skinsDirectory.path)) ?? []
+        let known = Dictionary(skins.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var stamps: [String: [FileStamp]] = [:]
         skins = files.sorted().compactMap { name in
-            SkinPack.load(Self.skinsDirectory.appending(path: name)).map {
+            let url = Self.skinsDirectory.appending(path: name)
+            let stamp = FileStamp.of(url)
+            stamps[name] = stamp
+            if let kept = known[name], skinStamps[name] == stamp { return kept }
+            return SkinPack.load(url).map {
                 SkinOption(id: name, title: $0.name ?? (name as NSString).deletingPathExtension, pack: $0)
             }
         }
+        skinStamps = stamps
     }
 
     /// Add the images, skin folders or `.plinthskin` files the user picks.
