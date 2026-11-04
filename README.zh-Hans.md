@@ -20,6 +20,26 @@ Plinth 需要 macOS 14 Sonoma 或更新版本，支持 Apple 芯片和 Intel。
 
 发布版用 Developer ID 签名，并经过 Apple 公证，打开时不会有 Gatekeeper 警告。Plinth 每天问一次 GitHub 有没有新版本，装之前先问你，也可以在设置里关掉。想自己构建，见[从源码构建](#从源码构建)。
 
+## 卸载
+
+「雁无遗踪之意，水无留影之心。」Plinth 在偏好设置里记着你的设置、说到哪一句、木鱼摆在哪儿；你的皮肤放在 `~/Library/Application Support/Plinth`；另有 macOS 替它检查更新时留的缓存。Mac App Store 版把这些都放在自己的容器里。除此之外什么也不留。如果开着**登录时打开**，先在设置里关掉，再在终端里运行下面这段，App 和它留下的东西就都删干净了：
+
+```sh
+osascript -e 'quit app "Plinth"'
+defaults delete dev.rubycat.plinth
+rm -rf /Applications/Plinth.app \
+  ~/Library/Preferences/dev.rubycat.plinth.plist \
+  ~/Library/"Application Support"/Plinth \
+  ~/Library/Caches/dev.rubycat.plinth \
+  ~/Library/HTTPStorages/dev.rubycat.plinth \
+  ~/Library/HTTPStorages/dev.rubycat.plinth.binarycookies \
+  ~/Library/Containers/dev.rubycat.plinth \
+  ~/Library/"Application Scripts"/dev.rubycat.plinth \
+  "$(getconf DARWIN_USER_CACHE_DIR)dev.rubycat.plinth"
+```
+
+你自己的皮肤也会一并删掉，想留着就先拷出来。
+
 ## 木鱼
 
 点木鱼就是敲，拖动可以换位置。右键点木鱼，或者点菜单栏上的图标，会打开菜单与**设置…**。菜单栏图标和桌面上的木鱼用的是同一款皮肤。
