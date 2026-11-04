@@ -70,37 +70,39 @@ Settings has three tabs:
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
 
-Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front), so the fish can tell you when a long build, a test run, or a coding agent is done:
+Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front). `open -g plinth://call` calls you back, so the fish can tell you when a long build, a test run, or a coding agent is done:
 
 ```sh
-make test; open -g plinth://knock
+make test; open -g plinth://call
 ```
 
-For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish knocks when Claude is done, and when it stops to ask your permission:
+A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early.
+
+For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish calls you when Claude is done, and when it stops to ask your permission:
 
 ```json
 {
   "hooks": {
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "open -g plinth://knock" }] }
+      { "hooks": [{ "type": "command", "command": "open -g plinth://call" }] }
     ],
     "Notification": [
       {
         "matcher": "permission_prompt",
-        "hooks": [{ "type": "command", "command": "open -g plinth://knock" }]
+        "hooks": [{ "type": "command", "command": "open -g plinth://call" }]
       }
     ]
   }
 }
 ```
 
-In Codex, add this line to `~/.codex/config.toml` and the fish knocks when a turn ends. Codex passes the command a JSON argument, which `sh` leaves alone:
+In Codex, add this line to `~/.codex/config.toml` and the fish calls you when a turn ends. Codex passes the command a JSON argument, which `sh` leaves alone:
 
 ```toml
-notify = ["sh", "-c", "open -g plinth://knock", "sh"]
+notify = ["sh", "-c", "open -g plinth://call", "sh"]
 ```
 
-If Plinth isn't running, the knock opens it, and the fish knocks once it is on screen.
+If Plinth isn't running, either URL opens it, and the fish knocks once it is on screen.
 
 In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
 
