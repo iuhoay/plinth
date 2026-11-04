@@ -1,6 +1,6 @@
 """Draw docs/skins.png, the README's picture of every built-in skin.
 
-The opening line of the show-off video sits above the skins, each resting on
+Bodhidharma's answer from the show-off video, 并无功德, sits above the skins, each resting on
 its pedestal with its mallet raised and its name below. The skins are drawn
 by showoff_video.py, so the picture and the video stay alike.
 
@@ -55,10 +55,8 @@ def cell(k):
 def sheet():
     img = background()
     d = ImageDraw.Draw(img)
-    centered(d, (W / 2, 112), "鱼昼夜常醒，刻木象形击之，所以警昏惰也。", v.font("serif", 52), (236, 230, 218))
-    centered(d, (W / 2, 180), "— 《敕修百丈清规》", v.font("serif", 24), (150, 146, 140))
-    centered(d, (W / 2, 226), "A fish never closes its eyes. Carve one in wood and strike it, to keep the drowsy awake.",
-             v.font("serif", 24), (128, 126, 122))
+    centered(d, (W / 2, 125), "并无功德", v.font("serifb", 84), (240, 234, 222))
+    centered(d, (W / 2, 218), "“No merit at all.”  — Bodhidharma, to Emperor Wu", v.font("serif", 26), (150, 146, 140))
     for k in range(v.N):
         r, c = divmod(k, COLS)
         left = (W - COLS * CELL) // 2 + c * CELL
