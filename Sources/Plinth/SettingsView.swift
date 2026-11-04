@@ -28,11 +28,20 @@ private struct KnockingSettings: View {
                     }
                 }
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
+                if Microphone.canTell {
+                    Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
+                }
             } header: {
                 Text("Knocking")
             } footer: {
-                Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
-                    .settingsFootnote()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
+                        .settingsFootnote()
+                    if Microphone.canTell {
+                        Text("Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
+                            .settingsFootnote()
+                    }
+                }
             }
             Section("Auto-Knock") {
                 Toggle("Knock on its own", isOn: $fish.autoKnock)

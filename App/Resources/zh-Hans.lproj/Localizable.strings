@@ -66,3 +66,7 @@
 "Updates" = "更新";
 "Check for updates automatically" = "自动检查更新";
 "Once a day, Plinth asks GitHub whether there is a newer version, and asks you before installing it. Nothing about you or your Mac is sent." = "Plinth 每天问一次 GitHub 有没有新版本，装之前会先问你。不会发送任何关于你或你的 Mac 的信息。";
+
+/* Settings: quiet while a microphone is in use */
+"Quiet while a microphone is in use" = "麦克风在用时不出声";
+"Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself." = "不出声：别的 App 在用麦克风时（比如开会），只有亲手敲才会响。Plinth 自己从不收音。";
