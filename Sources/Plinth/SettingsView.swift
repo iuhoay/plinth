@@ -98,6 +98,7 @@ private struct KnockingSettings: View {
                 if Microphone.canTell {
                     Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
                 }
+                LabeledContent("Mallet key") { MalletKeyField() }
             } header: {
                 Text("While You Work")
             } footer: {
@@ -110,6 +111,8 @@ private struct KnockingSettings: View {
                         Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
                             .settingsFootnote()
                     }
+                    Text("A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs ⌘ or ⌃.")
+                        .settingsFootnote()
                 }
             }
             Section("The Fish") {
@@ -128,6 +131,63 @@ private struct KnockingSettings: View {
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// The mallet key: click, then press the key to record it; Esc stops.
+private struct MalletKeyField: View {
+    @Environment(Fish.self) private var fish
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Button {
+                if monitor == nil { record() } else { stop() }
+            } label: {
+                if monitor != nil {
+                    Text("Press a key…")
+                } else if let key = fish.malletKey {
+                    Text(verbatim: key.title).monospaced()
+                } else {
+                    Text("Record Key")
+                }
+            }
+            if fish.malletKey != nil && monitor == nil {
+                Button {
+                    _ = fish.useMalletKey(nil)
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help("Clear")
+                .accessibilityLabel("Clear")
+            }
+        }
+        .onDisappear { stop() }
+    }
+
+    private func record() {
+        fish.holdMalletKey(false)
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 /* Esc */, event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
+                stop()
+            } else if let key = MalletKey(event), fish.useMalletKey(key) {
+                stop()
+                // The mallet's first knock, to hear it land.
+                fish.knock()
+            } else {
+                // A plain key would stop typing it, or another app holds the key.
+                NSSound.beep()
+            }
+            return nil
+        }
+    }
+
+    private func stop() {
+        guard let monitor else { return }
+        NSEvent.removeMonitor(monitor)
+        self.monitor = nil
+        fish.holdMalletKey(true)
     }
 }
 

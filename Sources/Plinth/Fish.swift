@@ -113,6 +113,7 @@ final class Fish {
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let sound = KnockSound()
     @ObservationIgnored private let typing = TypingWatcher()
+    @ObservationIgnored private let malletWatcher = MalletKeyWatcher()
     @ObservationIgnored private var autoTask: Task<Void, Never>?
     @ObservationIgnored var onWindowChange: (() -> Void)?
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
@@ -205,6 +206,9 @@ final class Fish {
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
+    /// A key, pedal or button that is the mallet: pressed in any app, it
+    /// knocks as a click on the fish does. See `useMalletKey`.
+    private(set) var malletKey: MalletKey?
     /// The worn skin's `SkinOption.id`: "" for the wooden fish.
     var skin: String {
         didSet {
@@ -275,6 +279,9 @@ final class Fish {
         restartAuto()
         typing.onPress = { [weak self] in self?.typed() }
         watchTyping()
+        malletKey = MalletKey(stored: d.dictionary(forKey: "malletKey"))
+        malletWatcher.onPress = { [weak self] in self?.knock(byHand: true) }
+        _ = malletWatcher.watch(malletKey)
         // A while after the screens sleep, auto-knock rests, and the Mac can sleep.
         let workspace = NSWorkspace.shared.notificationCenter
         workspace.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
@@ -345,6 +352,24 @@ final class Fish {
             }
         }
         if byHand && !preview { handSwing = (serial, swingTask) }
+    }
+
+    /// Make `key` the mallet, or have none. False, and nothing changes, if
+    /// another app already holds the key.
+    func useMalletKey(_ key: MalletKey?) -> Bool {
+        guard malletWatcher.watch(key) else {
+            _ = malletWatcher.watch(malletKey)
+            return false
+        }
+        malletKey = key
+        if let key { defaults.set(key.stored, forKey: "malletKey") } else { defaults.removeObject(forKey: "malletKey") }
+        return true
+    }
+
+    /// While a new mallet key is being recorded, the old one lets go of its
+    /// key, so pressing it again records it rather than knocking.
+    func holdMalletKey(_ hold: Bool) {
+        _ = malletWatcher.watch(hold ? malletKey : nil)
     }
 
     /// The fish is being moved, not knocked: a swing by hand still in the air

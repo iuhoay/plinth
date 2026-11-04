@@ -37,6 +37,12 @@
 "Volume" = "音量";
 "Knock as you type" = "打字时跟着敲";
 "Knock after long typing" = "打字久了，敲一下";
+"Mallet key" = "木槌键";
+"Record Key" = "录制按键";
+"Press a key…" = "请按一个键…";
+"Clear" = "清除";
+"Space" = "空格";
+"A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs ⌘ or ⌃." = "一个键、一只脚踏板或一颗 Stream Deck 按键，都可以当作木槌：在任何 App 里按下它，就如亲手敲一下。F 键可以单独用，其他键要配上 ⌘ 或 ⌃。";
 "After half an hour of typing with no three-minute rest, the fish falls quiet, then knocks once and lets it ring. Typed knocks and auto-knock keep quiet a few breaths. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼静一静，敲一下，余音放尽。打字敲击和自动敲击静几息。不计数，也不记录。";
 "Knock on its own" = "让它自己敲";
 "Every" = "每隔";
