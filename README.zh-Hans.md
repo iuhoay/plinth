@@ -118,11 +118,11 @@ open build/Plinth.app
 
 ```
 Sources/Plinth/     SwiftUI + AppKit 源码，KnockSynth.swift 负责合成敲击声
-App/                Info.plist、App 图标和打包进 App 的资源（皮肤、木槌、敲击效果、界面文字）
+App/                Info.plist、App 图标、磁盘映像背景和打包进 App 的资源（皮肤、木槌、敲击效果、界面文字）
 scripts/            构建、打包磁盘映像和生成更新源的脚本
 docs/               皮肤格式、发布流程（英文），以及 README 用的图
 .github/workflows/  发布流程
-tools/              绘制皮肤敲击效果、皮肤总览图和宣传视频的脚本（Python：NumPy、SciPy、Pillow）
+tools/              绘制皮肤敲击效果、磁盘映像背景、皮肤总览图和宣传视频的脚本（Python：NumPy、SciPy、Pillow）
 ```
 
 ## 许可

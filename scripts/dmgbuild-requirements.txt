@@ -1,0 +1,13 @@
+# dmgbuild and its dependencies, for scripts/make_dmg.sh. Every package is
+# pinned to one wheel by its SHA-256, and make_dmg.sh installs with
+# --require-hashes --only-binary :all:, so nothing else can be installed and
+# nothing runs at install time. To update, change a version and replace its
+# hash with the one PyPI lists for the py3-none-any wheel (or run `pip hash`
+# on the downloaded wheel), and keep the list closed: any new dependency
+# needs its own pinned line.
+dmgbuild==1.6.7 \
+    --hash=sha256:37ee5771c377beb3203d9164aae8046ffed8531c06edf9227f5788b3c599b1bf
+ds_store==1.3.3 \
+    --hash=sha256:b92a371efbf1b4ccce2a04d1ed13fceacc4736c81ba09cf5aefb74c088160a35
+mac_alias==2.2.3 \
+    --hash=sha256:7362b521d2132ef92f606a37abfed5fcd849ceb2f28b6f9743e014b02af92f0d
