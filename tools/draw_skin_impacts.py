@@ -1,9 +1,9 @@
 """Draw quiet impact pulses for the desk-object skins.
 
 The key and the abacus get rounded-square pulses in cyan and gold; bamboo,
-stone, piston, CRT, the cloud gong, the bianzhong and the stone chime get thin
-oval ripples in mint, moss green, amber, phosphor green, patina teal, bronze
-gold and pale jade. All are
+stone, piston, CRT, the cloud gong, the bianzhong, the stone chime and the
+temple fish get thin oval ripples in mint, moss green, amber, phosphor green,
+patina teal, bronze gold, pale jade and old gold. All are
 transparent, rendered at 1024 px and downsampled to 256, like the bowl's ripple.
 
 The images are original and released under CC0 (the code itself is MIT).
@@ -31,6 +31,7 @@ for name, color in [
     ("cloud-gong", (168, 250, 232)),
     ("bianzhong", (244, 216, 140)),
     ("stone-chime", (206, 238, 224)),
+    ("temple-fish", (236, 200, 140)),
 ]:
     if name in ("space-key", "abacus"):
         # A rounded square, flattened to sit on the top of the keycap.

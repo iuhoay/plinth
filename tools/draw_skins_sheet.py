@@ -59,7 +59,8 @@ def sheet():
     centered(d, (W / 2, 218), "“No merit at all.”  — Bodhidharma, to Emperor Wu", v.font("serif", 26), (150, 146, 140))
     for k in range(v.N):
         r, c = divmod(k, COLS)
-        left = (W - COLS * CELL) // 2 + c * CELL
+        row = min(COLS, v.N - r * COLS)  # a short last row is centred
+        left = (W - row * CELL) // 2 + c * CELL
         img.alpha_composite(cell(k), (left, TOP + r * CELL))
     mask = Image.new("L", (W, H))
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, W - 1, H - 1), 28, fill=255)

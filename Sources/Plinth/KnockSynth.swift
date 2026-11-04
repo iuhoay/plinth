@@ -5,7 +5,7 @@ import Foundation
 /// stored: a skin names a voice, and the voice is a handful of numbers.
 enum KnockSynth {
     static let sampleRate: Float = 44100
-    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic"]
+    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic", "temple"]
 
     struct Variation {
         var dry: [Float]
@@ -195,6 +195,14 @@ enum KnockSynth {
                     Mode(ratio: 3.5, amp: 0.25, tau: 0.02), Mode(ratio: 5.6, amp: 0.10, tau: 0.01)],
             body: Mode(ratio: 0.35, amp: 0.15, tau: 0.05),
             noise: Noise(amp: 0.45, tau: 0.0007, low: 5000, high: 14000), attack: 0.0002),
+        // A big old temple fish under a cloth-wrapped mallet: the wooden fish,
+        // lower and rounder, with the click padded away.
+        "temple": Tone(
+            bases: [470, 458, 482], length: 1.0, seed: 149,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.15), Mode(ratio: 1.52, amp: 0.40, tau: 0.09),
+                    Mode(ratio: 2.31, amp: 0.18, tau: 0.05), Mode(ratio: 3.07, amp: 0.08, tau: 0.03)],
+            body: Mode(ratio: 0.5, amp: 0.55, tau: 0.22),
+            noise: Noise(amp: 0.30, tau: 0.006, low: 600, high: 2600), attack: 0.003, lowpass: 3000),
     ]
 
     private static func strike(_ tone: Tone, base: Float, seed: UInt64) -> [Float] {

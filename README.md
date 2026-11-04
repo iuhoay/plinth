@@ -4,7 +4,7 @@ English · [简体中文](README.zh-Hans.md)
 
 A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*, nothing more. Knocking earns no merit (功德).
 
-![Under 「并无功德」 ("No merit at all"), Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
+![Under 「并无功德」 ("No merit at all"), Plinth's twenty-one built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, a mug, and an old temple fish](docs/skins.png)
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one on a small neon pedestal next to your windows.
 
@@ -30,7 +30,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Out of the way.** No Dock icon. Above your windows or on the desktop, wherever you put it.
 - **Updates.** Checks GitHub once a day and asks before installing. You can turn this off.
-- **Skins.** Twenty, each with its own mallet and knock. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling. You can also make your own from a single image or a folder of frames.
+- **Skins.** Twenty-one, each with its own mallet and knock. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling. You can also make your own from a single image or a folder of frames.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
 
@@ -93,7 +93,7 @@ my-skin/
 
 Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share a skin, send it as a `.plinthskin` file, which installs with a double-click or a drop on the fish. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
 
-The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
+The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty-one knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 
 ## Languages
 
