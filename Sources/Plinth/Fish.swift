@@ -47,6 +47,15 @@ enum Rhythm: String, CaseIterable, Identifiable {
         }
     }
 
+    /// One line on what this rhythm sounds like, for Settings.
+    var about: String {
+        switch self {
+        case .steady: String(localized: "Steady: the same quiet between every knock.")
+        case .quickening: String(localized: "Quickening (起板): slow, then faster into a roll, as a chant begins; then a rest.")
+        case .natural: String(localized: "Natural: each gap runs a little long or short, like a hand keeping time.")
+        }
+    }
+
     /// The quiet before auto-knock's knock number `n`, counting from 0.
     func gap(before n: Int, interval: Double) -> Double {
         switch self {
@@ -161,6 +170,10 @@ final class Fish {
 
     /// The community gallery, where skins are shared as .plinthskin files.
     static let moreSkins = URL(string: "https://github.com/rubycatco/plinth-skins")!
+    /// The skin format, in the language the app is showing.
+    static let skinGuide = URL(string: Bundle.main.preferredLocalizations.first == "zh-Hans"
+        ? "https://github.com/rubycatco/plinth/blob/main/docs/SKINS.zh-Hans.md"
+        : "https://github.com/rubycatco/plinth/blob/main/docs/SKINS.md")!
 
     static let skinsDirectory: URL = {
         let dir = URL.applicationSupportDirectory.appending(path: "Plinth/Skins")
