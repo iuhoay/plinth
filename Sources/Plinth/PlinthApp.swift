@@ -19,6 +19,9 @@ struct PlinthApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NSPanel!
+    /// A `plinth://knock` that launched Plinth comes before the fish is on
+    /// screen. It waits for the fish, so the mallet is seen to fall.
+    private var knockAtLaunch = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let fish = Fish.shared
@@ -59,6 +62,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
         placeSound()
         Updates.shared.start()
+        if knockAtLaunch {
+            DispatchQueue.main.async { Fish.shared.knock(byHand: false) }
+        }
     }
 
     private func placeSound() {
@@ -72,7 +78,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         Fish.shared.install(urls.filter(\.isFileURL))
         for url in urls where url.scheme == "plinth" && url.host() == "knock" {
-            Fish.shared.knock(byHand: false)
+            if panel == nil {
+                knockAtLaunch = true
+            } else {
+                Fish.shared.knock(byHand: false)
+            }
         }
     }
 
