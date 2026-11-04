@@ -68,6 +68,14 @@ Settings has three tabs:
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
 
+Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front), so the fish can tell you when a long build, a test run, or a coding agent is done:
+
+```sh
+make test; open -g plinth://knock
+```
+
+In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
+
 ## Skins
 
 A skin is a single image, or a folder with an `idle.png` and, optionally, blink and hit frames, its own mallet and burst, and a `skin.json` for its name, where the mallet lands, and which knock it makes:
@@ -89,7 +97,7 @@ The interface strings live in [`App/Resources/zh-Hans.lproj`](App/Resources/zh-H
 
 ## Building from source
 
-You need macOS 14 or later and Xcode 15 or later.
+You need macOS 14 or later and Xcode 16.3 or later.
 
 ```sh
 git clone https://github.com/rubycatco/plinth.git

@@ -56,3 +56,6 @@
 "%lld minutes" = "%lld 分钟";
 "Put Out the Incense" = "熄香";
 "Incense" = "香";
+
+/* Shortcuts: the Knock action */
+"Knocks once." = "敲一下。";
