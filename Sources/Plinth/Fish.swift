@@ -373,7 +373,8 @@ final class Fish {
     /// another app already holds the key.
     func useMalletKey(_ key: MalletKey?) -> Bool {
         guard malletWatcher.watch(key) else {
-            _ = malletWatcher.watch(malletKey)
+            // Put the old key back, unless a new one is being recorded.
+            _ = malletWatcher.watch(recordingMalletKey ? nil : malletKey)
             return false
         }
         malletKey = key

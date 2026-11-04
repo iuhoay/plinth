@@ -111,7 +111,7 @@ private struct KnockingSettings: View {
                         Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
                             .settingsFootnote()
                     }
-                    Text("A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs ⌘ or ⌃.")
+                    Text("A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs two modifiers, one of them ⌘ or ⌃, so ⌘C, ⌃C and the like keep working.")
                         .settingsFootnote()
                 }
             }

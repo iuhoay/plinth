@@ -20,19 +20,27 @@ struct MalletKey: Equatable {
         kVK_Space: String(localized: "Space"), kVK_Return: "↩", kVK_Tab: "⇥", kVK_Delete: "⌫", kVK_ForwardDelete: "⌦",
         kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
         kVK_Home: "↖", kVK_End: "↘", kVK_PageUp: "⇞", kVK_PageDown: "⇟",
+        kVK_Escape: "⎋", kVK_ANSI_KeypadEnter: "⌤",
     ]
 
     /// The key pressed in `event`, if it can be the mallet. An F-key can stand
-    /// alone, as a pedal or a one-key keypad usually sends; any other key needs
-    /// ⌘ or ⌃, so that typing it still types. (macOS keeps ⌥ alone for itself.)
+    /// alone, as a pedal or a one-key keypad usually sends. Any other key needs
+    /// ⌘ or ⌃, or it would no longer type, and one more modifier besides: the
+    /// mallet key is taken from every app, and ⌘ or ⌃ alone would take a
+    /// shortcut used every day, such as ⌘W or ⌃C, perhaps pressed out of habit
+    /// while the key is being recorded.
     init?(_ event: NSEvent) {
         let code = Int(event.keyCode)
         let flags = event.modifierFlags.intersection([.command, .control, .option, .shift])
         let function = Self.functionKeys[code]
-        guard function != nil || !flags.isDisjoint(with: [.command, .control]) else { return nil }
+        let held = [NSEvent.ModifierFlags.command, .control, .option, .shift].filter(flags.contains).count
+        guard function != nil || (!flags.isDisjoint(with: [.command, .control]) && held >= 2) else { return nil }
+        // Named as on the key, not as Shift or Option would type it: ⇧⌘2, not ⇧⌘@.
         let key = function.map { "F\($0)" } ?? Self.named[code]
-            ?? event.charactersIgnoringModifiers.map { $0.uppercased() } ?? ""
-        guard !key.isEmpty else { return nil }
+            ?? event.characters(byApplyingModifiers: []).map { $0.uppercased() } ?? ""
+        guard !key.isEmpty, !key.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }) else {
+            return nil
+        }
         var modifiers: UInt32 = 0
         var symbols = ""
         for (flag, bit, symbol) in [(NSEvent.ModifierFlags.control, controlKey, "⌃"), (.option, optionKey, "⌥"),
