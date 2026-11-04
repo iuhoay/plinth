@@ -1,6 +1,7 @@
 # Credits
 
 - **Code** is released under the [MIT License](LICENSE).
+- **Updates** use [Sparkle](https://sparkle-project.org), under the [MIT License](https://github.com/sparkle-project/Sparkle/blob/2.x/LICENSE), embedded in the app as `Sparkle.framework`.
 - **Sprite artwork** (`App/Resources/Skins`, `mallet.png`, `impact.png`) and the **app icon** (`App/AppIcon.png`) were AI-generated for this project, with the edits and effects below. They are dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 - **Sprite effects and derived frames** are also CC0. The singing bowl's ripple is drawn with [`tools/draw_ripple.py`](tools/draw_ripple.py); the space key, bamboo block, moss stone, piston, and CRT pulses are drawn with [`tools/draw_skin_impacts.py`](tools/draw_skin_impacts.py). The pressed key and compressed piston frames are derived from their idle artwork, keeping their bases still. The CRT's prompt and waveform are drawn over the same screen artwork, leaving its casing unchanged.
 - **Knock sounds** are synthesized by the app when a skin is worn (`Sources/Plinth/KnockSynth.swift`), not recorded. That synthesis is part of the MIT code.

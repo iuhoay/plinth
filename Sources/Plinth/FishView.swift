@@ -141,6 +141,11 @@ struct FishMenu: View {
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
         }
         Divider()
+        let updates = Updates.shared
+        if updates.available {
+            Button(updates.waiting ? "Update Available…" : "Check for Updates…") { updates.check() }
+                .disabled(!updates.canCheck)
+        }
         Button("Settings…") {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
