@@ -402,10 +402,10 @@ final class Fish {
         }
     }
 
-    /// Place the knock where the fish sits: `x` runs from 0 at the screen's
-    /// left edge to 1 at its right, `y` from 0 at the bottom to 1 at the top.
-    func heard(at x: Double, _ y: Double) {
-        sound.place(x: Float(x), y: Float(y))
+    /// Place the knock where the fish sits, from the middle of the main
+    /// display: `across` in its widths to the right, `up` in its heights.
+    func heard(across: Double, up: Double) {
+        sound.place(across: Float(across), up: Float(up))
     }
 
     /// The longer the quiet before a knock, the more fully it rings: none of
@@ -709,13 +709,16 @@ final class Fish {
 }
 
 /// The worn skin's knock and the room it rings in. Each knock is synthesized
-/// as the mallet falls, for how hard and where it lands. It comes from where
-/// the fish sits, placed around the listener, and on headphones it is rendered
-/// for the ears. Every knock rings in the one hall, so a run of knocks builds
-/// up in the room the way it would in a temple, rather than each in its own.
+/// as the mallet falls, for how hard and where it lands, and for the hour and
+/// the season. It comes from where the fish sits, placed around the listener,
+/// and on headphones it is rendered for the ears, and stays where the fish
+/// sits as the head turns. Every knock rings in the one hall, so a run of
+/// knocks builds up in the room the way it would in a temple, rather than
+/// each in its own.
 ///
-/// The engine runs only while a knock rings. A running engine holds the audio
-/// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
+/// The engine runs only while a knock rings, and head tracking with it. A
+/// running engine holds the audio output open, which keeps the Mac from idle
+/// sleep and costs CPU even in silence.
 @MainActor
 final class KnockSound {
     /// How long the engine stays up after the last knock has rung out, so a
@@ -734,8 +737,9 @@ final class KnockSound {
     private var warmth: Float = 0
     private var ringsUntil = 0.0
     private var quiet: Task<Void, Never>?
-    /// Where the fish sits on its screen, and whether the knock goes to headphones.
-    private var spot: (x: Float, y: Float) = (0.5, 0.5)
+    /// Where the fish sits, from the middle of the main display, and whether
+    /// the knock goes to headphones.
+    private var spot: (across: Float, up: Float) = (0, 0)
     private var headphones = false
 
     init() {
@@ -784,17 +788,19 @@ final class KnockSound {
         mix.use(room: room, gain: KnockSynth.Hall.gain(for: KnockSynth.reference(next), space: space))
     }
 
-    /// Where the fish sits on its screen: `x` from 0 at the left edge to 1 at
-    /// the right, `y` from 0 at the bottom to 1 at the top. Not all the way
-    /// round: it is in front of you, a little to one side. Knocks still ringing
-    /// move with it.
-    func place(x: Float, y: Float) {
-        spot = (min(max(x, 0), 1), min(max(y, 0), 1))
+    /// Where the fish sits, from the middle of the main display, which is
+    /// taken to be in front of you: `across` in its widths to the right, `up`
+    /// in its heights. The displays stand in an arc around you, so the main
+    /// display's edges are a little to either side and a display beside it
+    /// further round. Knocks still ringing move with it.
+    func place(across: Float, up: Float) {
+        spot = (across, up)
         // On headphones the knock is rendered for the ears, up and down as well
-        // as across. Speakers get a gentle pan: rendered for ears, a knock at
-        // the screen's edge comes out of one speaker alone.
-        let azimuth = (spot.x * 2 - 1) * (headphones ? 0.7 : 0.25)
-        let elevation = headphones ? (spot.y * 2 - 1) * 0.26 : 0
+        // as across, the main display's edges 40° to either side and 15° up
+        // or down. Speakers get a gentle pan: rendered for ears, a knock at the
+        // screen's edge comes out of one speaker alone.
+        let azimuth = headphones ? atan(2 * tan(0.7) * across) : min(max(0.5 * across, -0.35), 0.35)
+        let elevation = headphones ? atan(2 * tan(0.26) * up) : 0
         dry.position = AVAudio3DPoint(x: sin(azimuth) * cos(elevation), y: sin(elevation),
                                       z: -cos(azimuth) * cos(elevation))
     }
@@ -804,8 +810,16 @@ final class KnockSound {
     private func route() {
         headphones = Headphones.inUse()
         environment.outputType = headphones ? .headphones : .externalSpeakers
-        dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
-        place(x: spot.x, y: spot.y)
+        if #available(macOS 15, *) {
+            // Spatial audio: on headphones that follow the head, as AirPods
+            // do, the knock stays where the fish sits while you turn to
+            // another display or look down at a book.
+            dry.renderingAlgorithm = headphones ? .auto : .equalPowerPanning
+            environment.isListenerHeadTrackingEnabled = headphones
+        } else {
+            dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
+        }
+        place(across: spot.across, up: spot.up)
     }
 
     /// Start synthesizing one knock of the worn voice while the mallet falls,
@@ -857,6 +871,8 @@ final class KnockSound {
         quiet = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(wait, 0)))
             guard !Task.isCancelled, let self else { return }
+            // Head tracking rests with the engine; `route` resumes it.
+            if #available(macOS 15, *) { self.environment.isListenerHeadTrackingEnabled = false }
             self.engine.pause()
         }
     }

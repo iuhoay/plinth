@@ -57,7 +57,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PanelMover.onDrop = { [weak self] in self?.keepOnScreen(animated: true) }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.keepOnScreen(animated: false) }
+            MainActor.assumeIsolated {
+                self?.keepOnScreen(animated: false)
+                // The displays may stand differently around you now.
+                self?.placeSound()
+            }
         }
         placeSound()
         Updates.shared.start()
@@ -68,12 +72,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// An unseen fish sits nowhere, so its knock comes from straight ahead.
+    /// The knock comes from where the fish sits among the displays, as they
+    /// are arranged in System Settings, measured from the middle of the main
+    /// display (the one with the menu bar). An unseen fish sits nowhere, so
+    /// its knock comes from straight ahead.
     private func placeSound() {
-        guard Fish.shared.placement != .unseen else { return Fish.shared.heard(at: 0.5, 0.5) }
-        guard let screen = panel.screen ?? NSScreen.main else { return }
-        Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width,
-                          (panel.frame.midY - screen.frame.minY) / screen.frame.height)
+        guard Fish.shared.placement != .unseen, let main = NSScreen.screens.first?.frame else {
+            return Fish.shared.heard(across: 0, up: 0)
+        }
+        Fish.shared.heard(across: (panel.frame.midX - main.midX) / main.width,
+                          up: (panel.frame.midY - main.midY) / main.height)
     }
 
     /// `plinth://knock` knocks once, so scripts and other apps can knock, and
