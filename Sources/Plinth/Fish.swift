@@ -128,6 +128,10 @@ final class Fish {
     private(set) var swing = Swing()
     /// A swing by hand still in the air, until the mallet lands.
     @ObservationIgnored private var handSwing: (serial: Int, task: Task<Void, Never>)?
+    /// A typed key's short swing still in the air, cancelled if a knock by hand
+    /// (such as the mallet key) arrives in the same keystroke.
+    @ObservationIgnored private var quickSwing: Task<Void, Never>?
+    @ObservationIgnored private var recordingMalletKey = false
     /// A knock to sound once the room being rendered is ready, to hear it.
     @ObservationIgnored private var previewAfterSpace = false
     /// Counts the moments the mallet meets the figure. Nothing else is
@@ -280,7 +284,10 @@ final class Fish {
         typing.onPress = { [weak self] in self?.typed() }
         watchTyping()
         malletKey = MalletKey(stored: d.dictionary(forKey: "malletKey"))
-        malletWatcher.onPress = { [weak self] in self?.knock(byHand: true) }
+        malletWatcher.onPress = { [weak self] in
+            self?.typing.skip()
+            self?.knock(byHand: true)
+        }
         _ = malletWatcher.watch(malletKey)
         // A while after the screens sleep, auto-knock rests, and the Mac can sleep.
         let workspace = NSWorkspace.shared.notificationCenter
@@ -313,6 +320,10 @@ final class Fish {
     }
 
     private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
+        if byHand {
+            quickSwing?.cancel()
+            quickSwing = nil
+        }
         swing = Swing(serial: swing.serial + 1, quick: quick)
         let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
@@ -335,6 +346,7 @@ final class Fish {
             guard !Task.isCancelled else { return }
             if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
+            guard !Task.isCancelled else { return }
             let now = ProcessInfo.processInfo.systemUptime
             bloom = full ? 1 : Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
@@ -352,6 +364,7 @@ final class Fish {
             }
         }
         if byHand && !preview { handSwing = (serial, swingTask) }
+        else if quick { quickSwing = swingTask }
     }
 
     /// Make `key` the mallet, or have none. False, and nothing changes, if
@@ -369,6 +382,8 @@ final class Fish {
     /// While a new mallet key is being recorded, the old one lets go of its
     /// key, so pressing it again records it rather than knocking.
     func holdMalletKey(_ hold: Bool) {
+        recordingMalletKey = !hold
+        typing.skip()
         _ = malletWatcher.watch(hold ? malletKey : nil)
     }
 
@@ -659,6 +674,7 @@ final class Fish {
     /// A key went down, in some app. It knocks, if knocking as you type; and
     /// once you have typed long enough without a rest, the bell knocks instead.
     private func typed() {
+        guard !recordingMalletKey else { return }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
         if now - lastTyped > Self.rest { typingSince = now }
         lastTyped = now

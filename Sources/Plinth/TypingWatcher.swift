@@ -46,6 +46,13 @@ final class TypingWatcher {
         timer = nil
     }
 
+    /// A key that is the mallet, or is being recorded as one, is not typing.
+    func skip() {
+        let now = max(Self.lastEvent(.keyDown), ProcessInfo.processInfo.systemUptime)
+        lastDown = now
+        lastPress = now
+    }
+
     /// When the keyboard itself last sent an event of `type`, on the uptime clock.
     private static func lastEvent(_ type: CGEventType) -> TimeInterval {
         ProcessInfo.processInfo.systemUptime
