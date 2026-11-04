@@ -69,7 +69,8 @@ struct FileStamp: Equatable {
     /// The file itself, then, for a folder skin, each file in it.
     static func of(_ url: URL) -> [FileStamp] {
         guard let own = stamp(url) else { return [] }
-        let inside = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
+        // Hidden files, such as Finder's .DS_Store, are not part of the skin.
+        let inside = ((try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []).filter { !$0.hasPrefix(".") }
         return [own] + inside.sorted().compactMap { stamp(url.appending(path: $0)) }
     }
 
