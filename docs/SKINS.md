@@ -80,6 +80,7 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
 | `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
+| `raise` | number | `25` | How many degrees above its landing angle the mallet rests. Raise it for a figure struck on its face under a crossbar, so the mallet rests clear of the frame; the built-in hanging skins use `45`. |
 
 All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch:
 
@@ -87,6 +88,7 @@ All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch
 - A `strike` that doesn't hold exactly two numbers falls back to `[0.6, 0.3]`; `name` and `voice` still apply.
 - An unknown `voice`, including one in the wrong case such as `"Jade"`, plays the wooden knock.
 - A `glow` that isn't `#` and six hex digits is ignored, and the censer stays unlit.
+- A `raise` is kept between 0 and 80.
 
 ### Voices
 
@@ -114,7 +116,7 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `chime` | A thin slab of hanging stone: a long, soft-edged ring. |
 | `board` | The long wooden fish that hangs outside the hall: lower and longer than `wood`. |
 | `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
-| `temple` | A big old temple fish under a cloth-wrapped mallet: lower and rounder than `wood`, with the click padded away. |
+| `temple` | A big old temple fish under a cloth-wrapped mallet: the lowest of the wooden fishes, a long hollow ring, and a soft *dok* where the click was. |
 
 Every knock is synthesized as the mallet falls, louder and brighter the harder it lands, and with more of the shell and less of the hollow the further from the strike point. Each voice is tuned at a medium blow on the strike point. Every knock rings on in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
@@ -129,7 +131,7 @@ Without `mallet.png`, a skin uses the shared [`App/Resources/mallet.png`](../App
 | Head centre | (0.169, 0.505) of the mallet image. This point lands on `strike`. |
 | Grip | (0.964, 0.505) of the mallet image. The mallet rotates around this point. |
 
-At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°. A knock from typing skips the small lift before the swing.
+At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°, or `raise` degrees when `skin.json` sets it. A knock from typing skips the small lift before the swing.
 
 ## The burst
 
@@ -183,7 +185,7 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | no | own | own |
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
-| `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.295 | no | own | own |
+| `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | no | own | own |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
 

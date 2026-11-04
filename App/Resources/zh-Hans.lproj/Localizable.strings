@@ -25,14 +25,18 @@
 
 /* Settings: Knocking */
 "Knocking" = "敲击";
+"Sound" = "声音";
+"The longer the quiet before a knock, the longer it rings." = "敲之前静得越久，余音越长。";
+"While You Work" = "做事时";
+"Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission." = "在任何 App 里每按一个键，就敲一下。Plinth 从不知道按的是哪个键，也不需要任何权限。";
+"While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself." = "别的 App 在用麦克风时（比如开会），只有亲手敲才会响。Plinth 自己从不收音。";
+"The Fish" = "木鱼";
 "Volume" = "音量";
 "Knock as you type" = "打字时跟着敲";
-"Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission." = "打字时跟着敲：在任何 App 里每按一个键，就敲一下。Plinth 只知道键什么时候按下，不知道按的是哪个键，所以不需要特殊权限。";
 "Knock on its own" = "让它自己敲";
 "Every" = "每隔";
 "%.1f s" = "%.1f 秒";
 "Stop after 108 knocks, one turn of a mala" = "敲满 108 下就停，正好念珠一圈";
-"Display" = "显示";
 "Size" = "大小";
 "Small" = "小";
 "Medium" = "中";
@@ -44,7 +48,8 @@
 "Built In" = "内置";
 "Your Skins" = "你的皮肤";
 "No skins of your own yet." = "还没有你自己的皮肤。";
-"A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, crt, bead, plate, porcelain, bell, stamp, chime, board, ceramic, or temple. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one." = "皮肤是一个文件夹，必须有 idle.png。眨眼和被敲中的画面可以放 blink.png、hit.png，也可以是 blink-1.png、blink-2.png 这样的编号序列；还可以带自己的 mallet.png 和 impact.png，再用 skin.json 写上名字、锤子的落点，以及敲击声：wood、lacquer、ink、cartoon、pixel、jade、bowl、key、bamboo、stone、piston、crt、bead、plate、porcelain、bell、stamp、chime、board、ceramic、temple。单独一张图片也能当皮肤，.plinthskin 文件也行，它就是打包成一个文件、方便分享的皮肤文件夹。右键点你自己的皮肤，可以把它导出成 .plinthskin。";
+"Click a skin to wear it. One of your own can be a single image or a folder of frames; right-click it to export a .plinthskin to share." = "点一下就换上。自己的皮肤可以是一张图片，也可以是一组帧图的文件夹；右键点它，可以导出成 .plinthskin 分享给别人。";
+"How to Make a Skin" = "怎样做皮肤";
 "Choose images, skin folders that contain idle.png, or .plinthskin files" = "选择图片、包含 idle.png 的皮肤文件夹，或 .plinthskin 文件";
 
 /* Settings: Why a Fish */
@@ -69,14 +74,15 @@
 
 /* Settings: quiet while a microphone is in use */
 "Quiet while a microphone is in use" = "麦克风在用时不出声";
-"Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself." = "不出声：别的 App 在用麦克风时（比如开会），只有亲手敲才会响。Plinth 自己从不收音。";
 
 /* Auto-knock rhythm */
 "Rhythm" = "敲法";
 "Steady" = "匀速";
 "Quickening" = "起板";
 "Natural" = "随性";
-"Quickening starts slow and quickens into a roll, as a chant begins, then rests. Natural lets each gap run a little long or short, like a hand keeping time." = "起板：由慢到快，敲成一串，像诵经开头那样，然后停一停。随性：每一下的间隔稍长或稍短，像人手打拍子。";
+"Steady: the same quiet between every knock." = "匀速：每一下之间静得一样久。";
+"Quickening (起板): slow, then faster into a roll, as a chant begins; then a rest." = "起板：由慢到快，敲成一串，像诵经开头那样，然后停一停。";
+"Natural: each gap runs a little long or short, like a hand keeping time." = "随性：每一下的间隔稍长或稍短，像人手打拍子。";
 
 /* Settings: the room the knock rings in */
 "Space" = "空间";
