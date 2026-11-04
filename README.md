@@ -2,13 +2,13 @@
 
 English · [简体中文](README.zh-Hans.md)
 
-A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
+A tiny wooden fish that lives on your Mac's desktop. Click it and it knocks with a soft *tok*. You earn no merit (功德) for it.
 
 ![Under 「并无功德」 ("No merit at all"), Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
 
-Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth doesn't. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」: none at all. Your first knock gets the same answer, and no score is ever kept.
+Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth keeps none. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」, none at all. Your first knock gets the same answer.
 
 ## Contents
 
@@ -24,13 +24,13 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 ## Features
 
 - **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
-- **Auto-knock.** Let it keep time on its own (every 0.4 to 4 seconds): steadily, quickening from slow into a roll and resting, as a chant begins (起板), or naturally, each gap a little long or short. There's an option to stop after 108 knocks, one full turn of a mala.
-- **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock as it's lit, quiet while it burns down beside the fish, three knocks as it goes out. No clock, no count.
-- **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
+- **Auto-knock.** The fish keeps time on its own, every 0.4 to 4 seconds, in one of three rhythms: steady; quickening (起板), which starts slow, speeds into a roll and rests, the way a chant begins; or natural, with each gap a little longer or shorter. It can stop after 108 knocks, one full turn of a mala.
+- **A stick of incense.** Light one for 25, 45, or 60 minutes. The fish knocks once as you light it, stays quiet while it burns down, and knocks three times as it goes out. Plinth shows no clock and keeps no count.
+- **Knock as you type.** If you turn it on, each key you press in any app knocks once, and after a pause the next key rings longer. It needs no special permission, because Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
 - **Keeps itself current.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
-- **Skins.** Twenty ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a blue-and-white porcelain fish, a singing bowl, a cloud gong, a bianzhong bell, a stone chime, a fish board, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a seal, and a mug. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. The abacus flicks a bead and keeps no count; the cloud gong and the bianzhong swing back on their cords, and the stone chime rocks. The seal leaves a 空 (empty) where it lands; the mug splashes, and the coffee stays in the cup. Or swap in anything: a folder of sprite frames, or a single image.
+- **Skins.** Twenty ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a blue-and-white porcelain fish, a singing bowl, a cloud gong, a bianzhong bell, a stone chime, a fish board, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a seal, and a mug. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. The abacus flicks a bead and keeps no count; the cloud gong and the bianzhong swing back on their cords, and the stone chime rocks. The seal leaves a 空 (empty) where it lands; the mug splashes, and the coffee stays in the cup. You can also make your own from a folder of sprite frames or a single image.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
 
@@ -91,7 +91,7 @@ my-skin/
 └── skin.json   { "name": "My Skin", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share one, send it as a `.plinthskin` file: double-click one, or drop it on the fish, to install it. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
+Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share a skin, send it as a `.plinthskin` file, which installs with a double-click or a drop on the fish. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
 
 The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 
@@ -112,7 +112,7 @@ open build/Plinth.app
 
 The script builds a universal binary (Apple silicon and Intel), assembles `build/Plinth.app`, and signs it ad hoc. A build of your own doesn't update itself. To keep it, drag `build/Plinth.app` into `/Applications`. `./scripts/make_dmg.sh` packages it as a disk image; [docs/RELEASING.md](docs/RELEASING.md) covers signing, notarization, and releases.
 
-For a quick run during development, `swift run` works too, but the fish won't find its images outside the app bundle, so use the script to see the real thing.
+For a quick run during development, `swift run` works too, but outside the app bundle the fish can't find its images. Build with the script to see it as it ships.
 
 ## Project layout
 
