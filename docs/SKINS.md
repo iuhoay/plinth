@@ -65,12 +65,14 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 | `name` | string | file name | The skin's name in the menus and in Settings. |
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
+| `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
 
 All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch:
 
 - If the file isn't valid JSON, or a known key has the wrong type (for example `"strike": "0.6, 0.3"`), Plinth ignores the whole file and every key falls back to its default.
 - A `strike` that doesn't hold exactly two numbers falls back to `[0.6, 0.3]`; `name` and `voice` still apply.
 - An unknown `voice`, including one in the wrong case such as `"Jade"`, plays the wooden knock.
+- A `glow` that isn't `#` and six hex digits is ignored, and the censer stays unlit.
 
 ### Voices
 

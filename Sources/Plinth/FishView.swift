@@ -31,11 +31,11 @@ struct FishView: View {
                     .onEnded { _ in PanelMover.end() })
                 .contextMenu { FishMenu() }
                 .help("Click to knock · Drag to move · Right-click for options")
-                // The censer stands left of the pedestal, on the same ground.
-                .overlay(alignment: .bottomLeading) {
+                // The censer stands left of the pedestal, a touch behind it.
+                .background(alignment: .topLeading) {
                     if let incense = fish.incense {
                         IncenseView(incense: incense, side: side)
-                            .offset(y: -side * 0.035)
+                            .offset(x: -side * IncenseView.lead)
                             .transition(.opacity)
                     }
                 }

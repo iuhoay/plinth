@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A skin: a folder of square sprite frames (`idle.png`, and optionally
 /// `blink`, `hit`, `mallet.png`, `impact.png`) plus `skin.json` for its name,
-/// strike point and voice, or a single image as an idle-only skin.
+/// strike point, voice and glow, or a single image as an idle-only skin.
 ///
 /// docs/SKINS.md specifies the format and how it is drawn and animated. When
 /// this loader or `SpriteFish` changes what a skin can contain or how it looks,
@@ -20,6 +20,9 @@ struct SkinPack {
     /// A `KnockSynth` voice. Nil is the wooden fish.
     var voice: String?
     var strike = CGPoint(x: 0.6, y: 0.3)
+    /// The colour of the pedestal's neon, if it has one. The censer beside
+    /// the fish catches its light.
+    var glow: Color?
 
     static func load(_ url: URL?) -> SkinPack? {
         guard let url else { return nil }
@@ -32,14 +35,23 @@ struct SkinPack {
         guard let idle = frame("idle") else { return nil }
         var pack = SkinPack(idle: idle, blink: frames("blink"), hit: frames("hit"),
                             mallet: frame("mallet"), impact: frame("impact"))
-        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String? }
+        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String?; var glow: String? }
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
            let meta = try? JSONDecoder().decode(Meta.self, from: data) {
             pack.name = meta.name
             pack.voice = meta.voice
             if let s = meta.strike, s.count == 2 { pack.strike = CGPoint(x: s[0], y: s[1]) }
+            pack.glow = meta.glow.flatMap(Color.init(hex:))
         }
         return pack
+    }
+}
+
+extension Color {
+    /// A colour written as `#RRGGBB`.
+    init?(hex: String) {
+        guard hex.count == 7, hex.first == "#", let v = UInt32(hex.dropFirst(), radix: 16) else { return nil }
+        self.init(red: Double(v >> 16 & 0xFF) / 255, green: Double(v >> 8 & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
     }
 }
 

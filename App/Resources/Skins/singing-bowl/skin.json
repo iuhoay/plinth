@@ -1,1 +1,1 @@
-{ "name": "Singing Bowl", "strike": [0.625, 0.39], "voice": "bowl" }
+{ "name": "Singing Bowl", "strike": [0.625, 0.39], "voice": "bowl", "glow": "#38ECF1" }
