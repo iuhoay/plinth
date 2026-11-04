@@ -20,7 +20,7 @@ enum Zen {
         Quote(text: "日日是好日。", source: "云门文偃"),
         Quote(text: "春有百花秋有月，夏有凉风冬有雪。\n若无闲事挂心头，便是人间好时节。", source: "无门慧开《无门关》"),
         Quote(text: "行到水穷处，坐看云起时。", source: "王维《终南别业》"),
-        Quote(text: "我来问道无余说，\n云在青天水在瓶。", source: "李翱"),
+        Quote(text: "李翱问：如何是道？\n药山指天又指地曰：云在青天水在瓶。", source: "《祖堂集》"),
         Quote(text: "一切有为法，如梦幻泡影，\n如露亦如电，应作如是观。", source: "《金刚经》"),
         Quote(text: "应无所住，而生其心。", source: "《金刚经》"),
         Quote(text: "本来无一物，何处惹尘埃。", source: "慧能《六祖坛经》"),

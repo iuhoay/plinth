@@ -94,7 +94,7 @@ private struct KnockingSettings: View {
             }
             Section {
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
-                Toggle("Knock when it's time to pause", isOn: $fish.bell)
+                Toggle("Knock after long typing", isOn: $fish.bell)
                 if Microphone.canTell {
                     Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
                 }
@@ -104,7 +104,7 @@ private struct KnockingSettings: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission.")
                         .settingsFootnote()
-                    Text("After half an hour of typing with no three-minute rest, the fish knocks once. Stop, and take three breaths; typed knocks keep quiet for them. Nothing is counted or kept.")
+                    Text("After half an hour of typing with no three-minute rest, the fish falls quiet, then knocks once and lets it ring. Typed knocks and auto-knock keep quiet a few breaths. Nothing is counted or kept.")
                         .settingsFootnote()
                     if Microphone.canTell {
                         Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
@@ -261,6 +261,7 @@ private struct AboutSettings: View {
     static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
     static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
 
+    @Environment(Fish.self) private var fish
     private let inkFish = SkinOption.builtIn.first { $0.id == "builtin/ink-fish" } ?? .woodenFish
 
     var body: some View {
@@ -274,6 +275,8 @@ private struct AboutSettings: View {
                         .frame(width: 176, height: 176)
                         // The fish sits low in its sprite, under the mallet's arc.
                         .offset(y: -24)
+                        // The fish on the scroll is a fish: knock it and it sounds.
+                        .onTapGesture { fish.knock(byHand: false, preview: true) }
                 }
                 .padding(.top, 52)
                 .frame(maxWidth: .infinity)
