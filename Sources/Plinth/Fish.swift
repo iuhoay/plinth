@@ -98,10 +98,12 @@ final class Fish {
     /// the call lasts as long as `callLength`. See `call()`.
     static let callBeat = 1.6
     static let callLength = callBeat * 3 + 2
-    /// The bell: after this long at the keyboard with no rest of `rest`, one
-    /// knock, and typed knocks keep quiet for `breaths`, about three breaths.
+    /// The bell: after this long at the keyboard with no rest of `rest`, typed
+    /// knocks fall quiet, and after `bellQuiet` one full knock, set apart from
+    /// them as a hall's signal is; they keep quiet `breaths` more, about three breaths.
     static let bellAfter = 30.0 * 60
     static let rest = 3.0 * 60
+    static let bellQuiet = 3.0
     static let breaths = 15.0
 
     @ObservationIgnored private let defaults = UserDefaults.standard
@@ -626,8 +628,12 @@ final class Fish {
         lastTyped = now
         if bell && now - typingSince >= Self.bellAfter {
             typingSince = now
-            hushUntil = now + Self.breaths
-            knock(byHand: false)
+            hushUntil = now + Self.bellQuiet + Self.breaths
+            // A quiet first, so the bell isn't lost among typed knocks.
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(Self.bellQuiet))
+                self?.knock(byHand: false)
+            }
         } else if knockAsYouType && now >= hushUntil {
             knock(byHand: false, quick: true)
         }
