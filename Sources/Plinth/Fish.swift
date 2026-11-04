@@ -793,9 +793,8 @@ final class Fish {
 /// knocks builds up in the room the way it would in a temple, rather than
 /// each in its own.
 ///
-/// The engine runs only while a knock rings, and head tracking with it. A
-/// running engine holds the audio output open, which keeps the Mac from idle
-/// sleep and costs CPU even in silence.
+/// The engine runs only while a knock rings. A running engine holds the audio
+/// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
 @MainActor
 final class KnockSound {
     /// How long the engine stays up after the last knock has rung out, so a
@@ -887,15 +886,7 @@ final class KnockSound {
     private func route() {
         headphones = Headphones.inUse()
         environment.outputType = headphones ? .headphones : .externalSpeakers
-        if #available(macOS 15, *) {
-            // Spatial audio: on headphones that follow the head, as AirPods
-            // do, the knock stays where the fish sits while you turn to
-            // another display or look down at a book.
-            dry.renderingAlgorithm = headphones ? .auto : .equalPowerPanning
-            environment.isListenerHeadTrackingEnabled = headphones
-        } else {
-            dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
-        }
+        dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
         place(across: spot.across, up: spot.up)
     }
 
@@ -948,8 +939,6 @@ final class KnockSound {
         quiet = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(wait, 0)))
             guard !Task.isCancelled, let self else { return }
-            // Head tracking rests with the engine; `route` resumes it.
-            if #available(macOS 15, *) { self.environment.isListenerHeadTrackingEnabled = false }
             self.engine.pause()
         }
     }
