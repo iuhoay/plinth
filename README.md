@@ -76,7 +76,7 @@ Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g`
 make test; open -g plinth://knock
 ```
 
-For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish knocks when Claude is done, and when it is waiting on you, for a permission or for your reply:
+For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish knocks when Claude is done, and when it stops to ask your permission:
 
 ```json
 {
@@ -86,7 +86,7 @@ For a coding agent, use a hook. In Claude Code, add this to `~/.claude/settings.
     ],
     "Notification": [
       {
-        "matcher": "permission_prompt|idle_prompt",
+        "matcher": "permission_prompt",
         "hooks": [{ "type": "command", "command": "open -g plinth://knock" }]
       }
     ]

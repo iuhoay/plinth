@@ -76,7 +76,7 @@ Plinth 需要 macOS 14 Sonoma 或更新版本，支持 Apple 芯片和 Intel。
 make test; open -g plinth://knock
 ```
 
-编程助手用 hook 就行。在 Claude Code 里，把下面这段加进 `~/.claude/settings.json`（已经有 `hooks` 的话，合并进去）。Claude 做完时木鱼敲一下；它停下来等你批准、或等你回话时，也敲一下：
+编程助手用 hook 就行。在 Claude Code 里，把下面这段加进 `~/.claude/settings.json`（已经有 `hooks` 的话，合并进去）。Claude 做完时木鱼敲一下；它停下来等你批准时，也敲一下：
 
 ```json
 {
@@ -86,7 +86,7 @@ make test; open -g plinth://knock
     ],
     "Notification": [
       {
-        "matcher": "permission_prompt|idle_prompt",
+        "matcher": "permission_prompt",
         "hooks": [{ "type": "command", "command": "open -g plinth://knock" }]
       }
     ]
