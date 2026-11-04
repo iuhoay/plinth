@@ -4,7 +4,7 @@ English · [简体中文](README.zh-Hans.md)
 
 A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
 
-![Plinth's twelve built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, and a CRT terminal](docs/skins.png)
+![Under 「并无功德」 ("No merit at all"), Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
 
@@ -30,7 +30,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
 - **Keeps itself current.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
-- **Skins.** Twelve ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a singing bowl, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, and a CRT terminal. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. Or swap in anything: a folder of sprite frames, or a single image.
+- **Skins.** Twenty ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a blue-and-white porcelain fish, a singing bowl, a cloud gong, a bianzhong bell, a stone chime, a fish board, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a seal, and a mug. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. The abacus flicks a bead and keeps no count; the cloud gong and the bianzhong swing back on their cords, and the stone chime rocks. The seal leaves a 空 (empty) where it lands; the mug splashes, and the coffee stays in the cup. Or swap in anything: a folder of sprite frames, or a single image.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
 
@@ -93,7 +93,7 @@ my-skin/
 
 Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share one, send it as a `.plinthskin` file: double-click one, or drop it on the fish, to install it. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
 
-The [skin format](docs/SKINS.md) has the full specification: every file and key, the twelve knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
+The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 
 ## Languages
 
@@ -122,7 +122,7 @@ App/                Info.plist, app icon, and bundled resources (skins, mallet, 
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
-tools/              skin impact drawings (Python: NumPy, Pillow)
+tools/              skin impact drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
 ```
 
 ## License
