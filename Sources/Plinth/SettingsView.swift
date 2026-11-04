@@ -37,11 +37,20 @@ private struct KnockingSettings: View {
                     }
                 }
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
+                if Microphone.canTell {
+                    Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
+                }
             } header: {
                 Text("Knocking")
             } footer: {
-                Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
-                    .settingsFootnote()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
+                        .settingsFootnote()
+                    if Microphone.canTell {
+                        Text("Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
+                            .settingsFootnote()
+                    }
+                }
             }
             Section {
                 Toggle("Knock on its own", isOn: $fish.autoKnock)
@@ -82,9 +91,26 @@ private struct KnockingSettings: View {
                 }
                 Toggle("Launch at login", isOn: $fish.launchAtLogin)
             }
+            if Updates.shared.available {
+                UpdateSettings()
+            }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct UpdateSettings: View {
+    var body: some View {
+        @Bindable var updates = Updates.shared
+        Section {
+            Toggle("Check for updates automatically", isOn: $updates.checksAutomatically)
+        } header: {
+            Text("Updates")
+        } footer: {
+            Text("Once a day, Plinth asks GitHub whether there is a newer version, and asks you before installing it. Nothing about you or your Mac is sent.")
+                .settingsFootnote()
+        }
     }
 }
 

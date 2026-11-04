@@ -95,19 +95,22 @@ final class Fish {
     /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
     private(set) var bloom = 1.0
     private(set) var notice: Quote?
+    /// Auto-knocks since it was turned on, for Stop after 108.
     private var autoRound = 0
+    /// Auto-knocks since the rhythm last changed, so a new rhythm starts at its beginning.
+    private var rhythmStep = 0
     /// The stick of incense burning beside the fish, if one is lit.
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
 
     var autoKnock: Bool {
-        didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; restartAuto() }
+        didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; rhythmStep = 0; restartAuto() }
     }
     var interval: Double {
         didSet { defaults.set(interval, forKey: "interval"); restartAuto() }
     }
     var rhythm: Rhythm {
-        didSet { defaults.set(rhythm.rawValue, forKey: "rhythm"); autoRound = 0; restartAuto() }
+        didSet { defaults.set(rhythm.rawValue, forKey: "rhythm"); rhythmStep = 0; restartAuto() }
     }
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
     /// Each key pressed in any app knocks once. Typed knocks are never answered.
@@ -129,6 +132,11 @@ final class Fish {
         }
     }
     @ObservationIgnored private var spaceChange: Task<Void, Never>?
+    /// While another app listens to a microphone, as in a meeting, only a
+    /// knock by hand sounds; the others swing in silence.
+    var quietWhileMicInUse: Bool {
+        didSet { defaults.set(quietWhileMicInUse, forKey: "quietWhileMicInUse") }
+    }
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
@@ -174,7 +182,7 @@ final class Fish {
         let d = UserDefaults.standard
         d.register(defaults: [
             "interval": 1.0, "volume": 0.8, "space": Double(KnockSynth.Hall.defaultSpace), "size": FishSize.medium.rawValue,
-            "placement": Placement.floating.rawValue,
+            "placement": Placement.floating.rawValue, "quietWhileMicInUse": true,
         ])
         autoKnock = d.bool(forKey: "autoKnock")
         interval = d.double(forKey: "interval")
@@ -183,6 +191,7 @@ final class Fish {
         knockAsYouType = d.bool(forKey: "knockAsYouType")
         volume = d.double(forKey: "volume")
         space = d.double(forKey: "space")
+        quietWhileMicInUse = d.bool(forKey: "quietWhileMicInUse")
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -206,7 +215,9 @@ final class Fish {
             bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
-            sound.play(volume: Float(volume), bloom: Float(bloom))
+            if byHand || !quietWhileMicInUse || !Microphone.inUseByOthers() {
+                sound.play(volume: Float(volume), bloom: Float(bloom))
+            }
             if byHand {
                 // A Force Touch trackpad taps back as the mallet lands. macOS
                 // plays it only while a finger rests on the trackpad.
@@ -361,11 +372,12 @@ final class Fish {
         guard autoKnock else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
-                guard let gap = self.map({ $0.rhythm.gap(before: $0.autoRound, interval: $0.interval) }) else { return }
+                guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }
                 try? await Task.sleep(for: .seconds(gap))
                 guard let self, !Task.isCancelled else { return }
                 knock(byHand: false)
                 autoRound += 1
+                rhythmStep += 1
                 // One turn of the mala, then quiet. The quiet says the rest.
                 if stopAt108 && autoRound >= 108 { autoKnock = false }
             }

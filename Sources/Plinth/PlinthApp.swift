@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         layoutPanel()
         panel.orderFrontRegardless()
         placeSound()
+        Updates.shared.start()
     }
 
     private func placeSound() {
