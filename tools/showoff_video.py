@@ -72,6 +72,7 @@ def load(path):
         return None
 
 
+HIT = -15.0                            # the mallet's angle as it lands
 PACKS = []
 for name, folder, zh, voice, col, cap in SKINS:
     d = f"{RES}/Skins/{folder}"
@@ -79,7 +80,8 @@ for name, folder, zh, voice, col, cap in SKINS:
     PACKS.append(dict(idle=load(f"{d}/idle.png"), hit=load(f"{d}/hit.png"),
                       mallet=load(f"{d}/mallet.png") or load(f"{RES}/mallet.png"),
                       impact=load(f"{d}/impact.png") or load(f"{RES}/impact.png"),
-                      screen=load(f"{d}/impact.png") is None, strike=meta["strike"]))
+                      screen=load(f"{d}/impact.png") is None, strike=meta["strike"],
+                      rest=HIT + meta.get("raise", 25)))
 
 FONT = "/usr/share/fonts/opentype/noto/"
 @lru_cache(None)
@@ -156,18 +158,17 @@ def last_hit(sc, k, t):
             best = h
     return best
 
-REST, HIT = 10.0, -15.0
 
-def mallet_angle(u):
-    if u is None or u < 0: return REST
+def mallet_angle(u, rest):
+    if u is None or u < 0: return rest
     if u < .05:
-        x = u / .05; return REST + 7 * (1 - (1 - x) ** 2)
+        x = u / .05; return rest + 7 * (1 - (1 - x) ** 2)
     if u < .13:
-        x = (u - .05) / .08; return REST + 7 + (HIT - REST - 7) * x * x
+        x = (u - .05) / .08; return rest + 7 + (HIT - rest - 7) * x * x
     v = u - .13
     w, z = 2 * math.pi / .5, .33
     s = 1 - math.exp(-z * w * v) * math.cos(w * math.sqrt(1 - z * z) * v)
-    return HIT + (REST - HIT) * s
+    return HIT + (rest - HIT) * s
 
 
 @lru_cache(maxsize=400)
@@ -279,7 +280,7 @@ def draw_skin(canvas, k, cx, floor, side, t, sc, alpha=1.0, reflect=True, ring=T
     reach = (.964 - .169) * ms
     a15 = math.radians(15)
     gx, gy = stx + reach * math.cos(a15), sty - reach * math.sin(a15)
-    m = scaled(k, "mallet", ms).rotate(-mallet_angle(u), Image.BICUBIC, center=(.964 * ms, .505 * ms))
+    m = scaled(k, "mallet", ms).rotate(-mallet_angle(u, p["rest"]), Image.BICUBIC, center=(.964 * ms, .505 * ms))
     paste(canvas, with_alpha(m, alpha), gx - .964 * ms, gy - .505 * ms)
 
 

@@ -51,14 +51,14 @@ TONES = {
     "jade": dict(bases=[740, 724, 758], length=.85, seed=53,
                  modes=[M(1, 1, .16), M(2.27, .40, .07), M(3.70, .18, .030), M(6.40, .10, .010)],
                  body=M(.72, .06, .04), noise=(.28, .0011, 4500, 12000), attack=.0004),
-    "bowl": dict(bases=[196, 191, 202], length=1.35, seed=67,
+    "bowl": dict(bases=[196, 191, 202], length=3.0, seed=67,
                  modes=[M(1, .62, .70, 5), M(2.05, 1, .42, 8), M(2.98, .36, .18, 10), M(5.10, .14, .07, 14),
                         M(9.40, .16, .014), M(14.5, .08, .007)],
                  noise=(.22, .0018, 3200, 9000), attack=.0016),
     "key": dict(bases=[360, 348, 372], length=.22, seed=79,
                 modes=[M(1, .35, .018), M(4.2, .70, .010), M(7.5, .22, .005)],
                 noise=(.85, .0014, 2800, 9000), attack=.0003),
-    "bamboo": dict(bases=[262, 254, 270], length=.85, seed=83,
+    "bamboo": dict(bases=[262, 254, 270], length=.95, seed=83,
                    modes=[M(1, 1, .12), M(2.76, .38, .05), M(4.4, .12, .025)],
                    body=M(.5, .65, .22), noise=(.25, .004, 800, 3200), attack=.0012),
     "stone": dict(bases=[340, 330, 350], length=.5, seed=89,
@@ -73,19 +73,19 @@ TONES = {
     "bead": dict(bases=[1050, 1030, 1072], length=.3, seed=103,
                  modes=[M(1, 1, .030), M(2.71, .42, .016), M(5.2, .16, .007)],
                  body=M(.42, .10, .03), noise=(.55, .0016, 2500, 8000), attack=.0004),
-    "plate": dict(bases=[330, 322, 338], length=1.3, seed=107,
+    "plate": dict(bases=[330, 322, 338], length=2.2, seed=107,
                   modes=[M(1, .8, .55, 6), M(1.59, 1, .38, 9), M(2.14, .55, .22, 12), M(2.65, .30, .12), M(3.61, .14, .06)],
                   noise=(.18, .003, 600, 2800), attack=.002, lowpass=5000),
     "porcelain": dict(bases=[1180, 1160, 1204], length=.7, seed=109,
                       modes=[M(1, 1, .14), M(2.32, .36, .06), M(4.1, .16, .024), M(6.9, .08, .009)],
                       noise=(.30, .0008, 5000, 13000), attack=.0003),
-    "bell": dict(bases=[392, 384, 400], length=1.4, seed=113,
+    "bell": dict(bases=[392, 384, 400], length=2.0, seed=113,
                  modes=[M(.5, .30, .50), M(1, 1, .40, 4), M(1.19, .65, .32), M(2.4, .35, .12), M(3.1, .20, .06), M(4.9, .10, .03)],
                  noise=(.25, .002, 800, 4000), attack=.001),
     "stamp": dict(bases=[180, 172, 188], length=.3, seed=127,
                   modes=[M(1, 1, .030), M(2.3, .35, .015), M(3.9, .12, .008)],
                   body=M(.6, .40, .04), noise=(.60, .006, 300, 2500), attack=.001, lowpass=2500),
-    "chime": dict(bases=[560, 548, 574], length=1.2, seed=131,
+    "chime": dict(bases=[560, 548, 574], length=1.7, seed=131,
                   modes=[M(1, 1, .35), M(2.76, .45, .14), M(5.4, .20, .05), M(8.9, .08, .015)],
                   noise=(.15, .003, 1000, 5000), attack=.0015),
     "board": dict(bases=[430, 420, 442], length=.95, seed=137,
@@ -94,9 +94,9 @@ TONES = {
     "ceramic": dict(bases=[1450, 1420, 1480], length=.5, seed=139,
                     modes=[M(1, 1, .09), M(2.1, .45, .05), M(3.5, .25, .02), M(5.6, .10, .01)],
                     body=M(.35, .15, .05), noise=(.45, .0007, 5000, 14000), attack=.0002),
-    "temple": dict(bases=[470, 458, 482], length=1.0, seed=149,
-                   modes=[M(1, 1, .15), M(1.52, .40, .09), M(2.31, .18, .05), M(3.07, .08, .03)],
-                   body=M(.5, .55, .22), noise=(.30, .006, 600, 2600), attack=.003, lowpass=3000),
+    "temple": dict(bases=[370, 361, 380], length=1.2, seed=149,
+                   modes=[M(1, 1, .17), M(1.52, .45, .10), M(2.31, .22, .055), M(3.07, .10, .032)],
+                   body=M(.5, .65, .30), noise=(1.0, .005, 800, 3500), attack=.002, lowpass=4500),
 }
 
 
@@ -122,7 +122,7 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0):
     edge = min(abs(place), 1)
     base = base * (1 + .004 * (force - REF_FORCE)) * (1 + .012 * edge)
     rng = Rng(seed)
-    n = int(tone["length"] * SR)
+    n = int(np.float32(tone["length"]) * np.float32(SR))  # in Float, as Swift counts it
     out = np.zeros(n)
     idx = np.arange(n)
 

@@ -1,6 +1,6 @@
 # Plinth
 
-[English](README.md) · 简体中文
+[English](README.md) · 简体中文 · [plinth.fish](https://plinth.fish/zh/)
 
 一条住在 Mac 桌面上的小木鱼。点它一下，笃的一声，仅此而已，敲了也不积功德。
 
@@ -38,7 +38,7 @@
 
 Plinth 需要 macOS 14 Sonoma 或更新版本，支持 Apple 芯片和 Intel。
 
-1. 从 [Releases](https://github.com/rubycatco/plinth/releases) 下载 `Plinth-x.y.z.dmg`。
+1. 从 [plinth.fish](https://plinth.fish/zh/) 下载 Plinth，或者从 [Releases](https://github.com/rubycatco/plinth/releases) 下载 `Plinth-x.y.z.dmg`。
 2. 打开它，把 Plinth 拖进「应用程序」文件夹。
 3. 如果旧版正开着，先右键木鱼，选 **退出 Plinth**。
 

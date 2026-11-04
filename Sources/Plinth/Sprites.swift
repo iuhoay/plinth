@@ -20,6 +20,9 @@ struct SkinPack {
     /// A `KnockSynth` voice. Nil is the wooden fish.
     var voice: String?
     var strike = CGPoint(x: 0.6, y: 0.3)
+    /// How far above its strike the mallet rests, in degrees around the grip.
+    /// A figure struck on its face, under a crossbar, wants it higher.
+    var raise = Sprite.raiseDegrees
     /// The colour of the pedestal's neon, if it has one. The censer beside
     /// the fish catches its light.
     var glow: Color?
@@ -35,15 +38,46 @@ struct SkinPack {
         guard let idle = frame("idle") else { return nil }
         var pack = SkinPack(idle: idle, blink: frames("blink"), hit: frames("hit"),
                             mallet: frame("mallet"), impact: frame("impact"))
-        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String?; var glow: String? }
+        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String?; var glow: String?; var raise: Double? }
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
            let meta = try? JSONDecoder().decode(Meta.self, from: data) {
             pack.name = meta.name
             pack.voice = meta.voice
             if let s = meta.strike, s.count == 2 { pack.strike = CGPoint(x: s[0], y: s[1]) }
             pack.glow = meta.glow.flatMap(Color.init(hex:))
+            if let r = meta.raise { pack.raise = min(max(r, 0), 80) }
         }
         return pack
+    }
+}
+
+/// What a file is on disk, cheap to read: enough to tell when a skin has
+/// changed without decoding its images. The status-change time moves on
+/// every write, rename or replacement, even one that keeps the old
+/// modification date, as a Finder copy does.
+struct FileStamp: Equatable {
+    var name: String
+    var inode: UInt64
+    var size: Int64
+    var changed: timespec
+
+    static func == (a: FileStamp, b: FileStamp) -> Bool {
+        a.name == b.name && a.inode == b.inode && a.size == b.size
+            && a.changed.tv_sec == b.changed.tv_sec && a.changed.tv_nsec == b.changed.tv_nsec
+    }
+
+    /// The file itself, then, for a folder skin, each file in it.
+    static func of(_ url: URL) -> [FileStamp] {
+        guard let own = stamp(url) else { return [] }
+        // Hidden files, such as Finder's .DS_Store, are not part of the skin.
+        let inside = ((try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []).filter { !$0.hasPrefix(".") }
+        return [own] + inside.sorted().compactMap { stamp(url.appending(path: $0)) }
+    }
+
+    private static func stamp(_ url: URL) -> FileStamp? {
+        var info = stat()
+        guard stat(url.path, &info) == 0 else { return nil }
+        return FileStamp(name: url.lastPathComponent, inode: info.st_ino, size: info.st_size, changed: info.st_ctimespec)
     }
 }
 
@@ -125,7 +159,8 @@ enum Sprite {
     /// Mallet image size as a fraction of the frame.
     static let malletSize = 0.6
     /// At impact the handle rises this far above horizontal toward the grip;
-    /// at rest the mallet is lifted this much further around the grip.
+    /// at rest the mallet is lifted this much further around the grip, unless
+    /// the skin says otherwise.
     static let strikeDegrees = 15.0
     static let raiseDegrees = 25.0
 
@@ -200,7 +235,7 @@ struct SpriteFish: View {
         let reach = (Sprite.malletGrip.x - Sprite.malletHead.x) * size
         let a = Sprite.strikeDegrees * .pi / 180
         let grip = CGPoint(x: pack.strike.x * side + reach * cos(a), y: pack.strike.y * side - reach * sin(a))
-        let hit = -Sprite.strikeDegrees, rest = hit + Sprite.raiseDegrees
+        let hit = -Sprite.strikeDegrees, rest = hit + pack.raise
         // A typed key goes straight down, with no lift, to land with the key.
         let quick = fish.quickStrike
         return Image(nsImage: pack.mallet ?? Sprite.mallet)

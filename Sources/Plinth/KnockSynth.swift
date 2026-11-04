@@ -106,7 +106,7 @@ enum KnockSynth {
         // A struck bronze bowl. The hum sits under a slightly sharp rim tone;
         // the cents are the slow beat of a bowl that isn't perfectly round.
         "bowl": Tone(
-            bases: [196, 191, 202], length: 1.35, seed: 67,
+            bases: [196, 191, 202], length: 3.0, seed: 67,
             modes: [Mode(ratio: 1, amp: 0.62, tau: 0.70, cents: 5), Mode(ratio: 2.05, amp: 1, tau: 0.42, cents: 8),
                     Mode(ratio: 2.98, amp: 0.36, tau: 0.18, cents: 10), Mode(ratio: 5.10, amp: 0.14, tau: 0.07, cents: 14),
                     Mode(ratio: 9.40, amp: 0.16, tau: 0.014), Mode(ratio: 14.5, amp: 0.08, tau: 0.007)],
@@ -119,7 +119,7 @@ enum KnockSynth {
             noise: Noise(amp: 0.85, tau: 0.0014, low: 2800, high: 9000), attack: 0.0003),
         // A hollow bamboo tube, more air than wood.
         "bamboo": Tone(
-            bases: [262, 254, 270], length: 0.85, seed: 83,
+            bases: [262, 254, 270], length: 0.95, seed: 83,
             modes: [Mode(ratio: 1, amp: 1, tau: 0.12), Mode(ratio: 2.76, amp: 0.38, tau: 0.05),
                     Mode(ratio: 4.4, amp: 0.12, tau: 0.025)],
             body: Mode(ratio: 0.5, amp: 0.65, tau: 0.22),
@@ -151,7 +151,7 @@ enum KnockSynth {
         // A flat bronze plate under a leather mallet. A plate's partials don't line
         // up the way a bowl's do, and the soft head keeps the clang out.
         "plate": Tone(
-            bases: [330, 322, 338], length: 1.3, seed: 107,
+            bases: [330, 322, 338], length: 2.2, seed: 107,
             modes: [Mode(ratio: 1, amp: 0.8, tau: 0.55, cents: 6), Mode(ratio: 1.59, amp: 1, tau: 0.38, cents: 9),
                     Mode(ratio: 2.14, amp: 0.55, tau: 0.22, cents: 12), Mode(ratio: 2.65, amp: 0.30, tau: 0.12),
                     Mode(ratio: 3.61, amp: 0.14, tau: 0.06)],
@@ -165,7 +165,7 @@ enum KnockSynth {
         // An almond-shaped bronze bell: two notes a minor third apart, struck with
         // wood, and damped sooner than a round bell would be.
         "bell": Tone(
-            bases: [392, 384, 400], length: 1.4, seed: 113,
+            bases: [392, 384, 400], length: 2.0, seed: 113,
             modes: [Mode(ratio: 0.5, amp: 0.30, tau: 0.50), Mode(ratio: 1, amp: 1, tau: 0.40, cents: 4),
                     Mode(ratio: 1.19, amp: 0.65, tau: 0.32), Mode(ratio: 2.4, amp: 0.35, tau: 0.12),
                     Mode(ratio: 3.1, amp: 0.20, tau: 0.06), Mode(ratio: 4.9, amp: 0.10, tau: 0.03)],
@@ -180,7 +180,7 @@ enum KnockSynth {
         // A thin slab of stone hung on a cord. It rings longer than the jade fish,
         // and the felt mallet keeps the attack soft.
         "chime": Tone(
-            bases: [560, 548, 574], length: 1.2, seed: 131,
+            bases: [560, 548, 574], length: 1.7, seed: 131,
             modes: [Mode(ratio: 1, amp: 1, tau: 0.35), Mode(ratio: 2.76, amp: 0.45, tau: 0.14),
                     Mode(ratio: 5.4, amp: 0.20, tau: 0.05), Mode(ratio: 8.9, amp: 0.08, tau: 0.015)],
             noise: Noise(amp: 0.15, tau: 0.003, low: 1000, high: 5000), attack: 0.0015),
@@ -199,14 +199,14 @@ enum KnockSynth {
                     Mode(ratio: 3.5, amp: 0.25, tau: 0.02), Mode(ratio: 5.6, amp: 0.10, tau: 0.01)],
             body: Mode(ratio: 0.35, amp: 0.15, tau: 0.05),
             noise: Noise(amp: 0.45, tau: 0.0007, low: 5000, high: 14000), attack: 0.0002),
-        // A big old temple fish under a cloth-wrapped mallet: the wooden fish,
-        // lower and rounder, with the click padded away.
+        // A big old temple fish under a cloth-wrapped mallet: the lowest of the
+        // wooden fishes, a long hollow ring, and a soft dok where the click was.
         "temple": Tone(
-            bases: [470, 458, 482], length: 1.0, seed: 149,
-            modes: [Mode(ratio: 1, amp: 1, tau: 0.15), Mode(ratio: 1.52, amp: 0.40, tau: 0.09),
-                    Mode(ratio: 2.31, amp: 0.18, tau: 0.05), Mode(ratio: 3.07, amp: 0.08, tau: 0.03)],
-            body: Mode(ratio: 0.5, amp: 0.55, tau: 0.22),
-            noise: Noise(amp: 0.30, tau: 0.006, low: 600, high: 2600), attack: 0.003, lowpass: 3000),
+            bases: [370, 361, 380], length: 1.2, seed: 149,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.17), Mode(ratio: 1.52, amp: 0.45, tau: 0.10),
+                    Mode(ratio: 2.31, amp: 0.22, tau: 0.055), Mode(ratio: 3.07, amp: 0.10, tau: 0.032)],
+            body: Mode(ratio: 0.5, amp: 0.65, tau: 0.30),
+            noise: Noise(amp: 1.0, tau: 0.005, low: 800, high: 3500), attack: 0.002, lowpass: 4500),
     ]
 
     private static func strike(_ tone: Tone, base: Float, seed: UInt64,

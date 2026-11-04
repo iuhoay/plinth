@@ -36,52 +36,60 @@ private struct KnockingSettings: View {
                         Text("Great hall").foregroundStyle(.secondary)
                     }
                 }
+            } header: {
+                Text("Sound")
+            } footer: {
+                Text("The longer the quiet before a knock, the longer it rings.")
+                    .settingsFootnote()
+            }
+            Section {
+                Toggle("Knock on its own", isOn: $fish.autoKnock)
+                // Only what applies: the pace and rhythm appear once it knocks.
+                if fish.autoKnock {
+                    LabeledContent("Every") {
+                        HStack {
+                            Slider(value: $fish.interval, in: 0.4...4) {
+                                EmptyView()
+                            } minimumValueLabel: {
+                                Image(systemName: "hare").foregroundStyle(.secondary)
+                            } maximumValueLabel: {
+                                Image(systemName: "tortoise").foregroundStyle(.secondary)
+                            }
+                            Text("\(fish.interval, specifier: "%.1f") s")
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+                    Picker("Rhythm", selection: $fish.rhythm) {
+                        ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
+                    }
+                    Toggle("Stop after 108 knocks, one turn of a mala", isOn: $fish.stopAt108)
+                }
+            } header: {
+                Text("Auto-Knock")
+            } footer: {
+                if fish.autoKnock {
+                    Text(fish.rhythm.about).settingsFootnote()
+                }
+            }
+            Section {
                 Toggle("Knock as you type", isOn: $fish.knockAsYouType)
                 if Microphone.canTell {
                     Toggle("Quiet while a microphone is in use", isOn: $fish.quietWhileMicInUse)
                 }
             } header: {
-                Text("Knocking")
+                Text("While You Work")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission.")
+                    Text("Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission.")
                         .settingsFootnote()
                     if Microphone.canTell {
-                        Text("Quiet: while another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
+                        Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
                             .settingsFootnote()
                     }
                 }
             }
-            Section {
-                Toggle("Knock on its own", isOn: $fish.autoKnock)
-                LabeledContent("Every") {
-                    HStack {
-                        Slider(value: $fish.interval, in: 0.4...4) {
-                            EmptyView()
-                        } minimumValueLabel: {
-                            Image(systemName: "hare").foregroundStyle(.secondary)
-                        } maximumValueLabel: {
-                            Image(systemName: "tortoise").foregroundStyle(.secondary)
-                        }
-                        Text("\(fish.interval, specifier: "%.1f") s")
-                            .monospacedDigit()
-                            .frame(width: 44, alignment: .trailing)
-                    }
-                }
-                .disabled(!fish.autoKnock)
-                Picker("Rhythm", selection: $fish.rhythm) {
-                    ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
-                }
-                .disabled(!fish.autoKnock)
-                Toggle("Stop after 108 knocks, one turn of a mala", isOn: $fish.stopAt108)
-                    .disabled(!fish.autoKnock)
-            } header: {
-                Text("Auto-Knock")
-            } footer: {
-                Text("Quickening starts slow and quickens into a roll, as a chant begins, then rests. Natural lets each gap run a little long or short, like a hand keeping time.")
-                    .settingsFootnote()
-            }
-            Section("Display") {
+            Section("The Fish") {
                 Picker("Size", selection: $fish.size) {
                     ForEach(FishSize.allCases) { Text($0.title).tag($0) }
                 }
@@ -139,8 +147,12 @@ private struct SkinSettings: View {
             } header: {
                 Text("Your Skins")
             } footer: {
-                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, crt, bead, plate, porcelain, bell, stamp, chime, board, ceramic, or temple. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one.")
-                    .settingsFootnote()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Click a skin to wear it. One of your own can be a single image or a folder of frames; right-click it to export a .plinthskin to share.")
+                        .settingsFootnote()
+                    Link("How to Make a Skin", destination: Fish.skinGuide)
+                        .font(.footnote)
+                }
             }
         }
         .formStyle(.grouped)
@@ -172,10 +184,10 @@ private struct SkinTile: View {
     var body: some View {
         Button(action: choose) {
             VStack(spacing: 4) {
-                Image(nsImage: option.pack.idle)
+                Image(nsImage: Self.thumbnail(option.pack.idle))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 84, height: 84)
+                    .frame(width: 76, height: 76)
                     .scaleEffect(hovering ? 1.06 : 1)
                 Text(option.title)
                     .font(.caption)
@@ -194,6 +206,21 @@ private struct SkinTile: View {
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.15), value: hovering)
         .help(option.title)
+    }
+
+    /// The figure alone, without the empty air its frame keeps for the
+    /// mallet, so every tile shows the skin rather than space. Kept, as
+    /// finding the figure reads every pixel. Kept on the source image itself,
+    /// so it goes when the skins are read afresh and the old images do.
+    private static var thumbnailKey: UInt8 = 0
+    private static func thumbnail(_ idle: NSImage) -> NSImage {
+        if let done = objc_getAssociatedObject(idle, &thumbnailKey) as? NSImage { return done }
+        let made = idle.menuBarIcon(side: 152)
+        // An image that could not be cropped comes back as itself; holding it would keep it forever.
+        if made !== idle {
+            objc_setAssociatedObject(idle, &thumbnailKey, made, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        return made
     }
 }
 
@@ -339,6 +366,9 @@ private struct Enso: View {
 
 private extension Text {
     func settingsFootnote() -> some View {
+        // A Form footer is drawn flush right; a note reads better from the left.
         font(.footnote).foregroundStyle(.secondary)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

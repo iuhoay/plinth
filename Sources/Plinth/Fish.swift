@@ -47,6 +47,15 @@ enum Rhythm: String, CaseIterable, Identifiable {
         }
     }
 
+    /// One line on what this rhythm sounds like, for Settings.
+    var about: String {
+        switch self {
+        case .steady: String(localized: "Steady: the same quiet between every knock.")
+        case .quickening: String(localized: "Quickening (起板): slow, then faster into a roll, as a chant begins; then a rest.")
+        case .natural: String(localized: "Natural: each gap runs a little long or short, like a hand keeping time.")
+        }
+    }
+
     /// The quiet before auto-knock's knock number `n`, counting from 0.
     func gap(before n: Int, interval: Double) -> Double {
         switch self {
@@ -84,6 +93,8 @@ final class Fish {
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinFileWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinRefresh: Task<Void, Never>?
+    /// The files each of `skins` was read from, as they were then.
+    @ObservationIgnored private var skinStamps: [String: [FileStamp]] = [:]
     /// When the mallet last met the wood, on the system uptime clock.
     @ObservationIgnored private var lastImpact = -Double.infinity
 
@@ -161,6 +172,10 @@ final class Fish {
 
     /// The community gallery, where skins are shared as .plinthskin files.
     static let moreSkins = URL(string: "https://github.com/rubycatco/plinth-skins")!
+    /// The skin format, in the language the app is showing.
+    static let skinGuide = URL(string: Bundle.main.preferredLocalizations.first == "zh-Hans"
+        ? "https://github.com/rubycatco/plinth/blob/main/docs/SKINS.zh-Hans.md"
+        : "https://github.com/rubycatco/plinth/blob/main/docs/SKINS.md")!
 
     static let skinsDirectory: URL = {
         let dir = URL.applicationSupportDirectory.appending(path: "Plinth/Skins")
@@ -312,13 +327,22 @@ final class Fish {
         return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
     }
 
+    /// Read the skins folder. A skin whose files are as they were is kept, not
+    /// decoded again, so choosing a skin costs only a look at the folder.
     func refreshSkins() {
         let files = (try? FileManager.default.contentsOfDirectory(atPath: Self.skinsDirectory.path)) ?? []
+        let known = Dictionary(skins.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var stamps: [String: [FileStamp]] = [:]
         skins = files.sorted().compactMap { name in
-            SkinPack.load(Self.skinsDirectory.appending(path: name)).map {
+            let url = Self.skinsDirectory.appending(path: name)
+            let stamp = FileStamp.of(url)
+            stamps[name] = stamp
+            if let kept = known[name], skinStamps[name] == stamp { return kept }
+            return SkinPack.load(url).map {
                 SkinOption(id: name, title: $0.name ?? (name as NSString).deletingPathExtension, pack: $0)
             }
         }
+        skinStamps = stamps
     }
 
     /// Add the images, skin folders or `.plinthskin` files the user picks.

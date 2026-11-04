@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The Mac App Store build only. On its first launch, macOS moves the
+	     skins of an earlier Plinth into the app's container; it migrates the
+	     preferences on its own. -->
+	<key>Move</key>
+	<array>
+		<string>${ApplicationSupport}/Plinth</string>
+	</array>
+</dict>
+</plist>

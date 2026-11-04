@@ -1,6 +1,6 @@
 # Plinth
 
-English · [简体中文](README.zh-Hans.md)
+English · [简体中文](README.zh-Hans.md) · [plinth.fish](https://plinth.fish)
 
 A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*, nothing more. Knocking earns no merit (功德).
 
@@ -38,7 +38,7 @@ What little the fish says is in the original Chinese, as you would hear it in a 
 
 Plinth runs on macOS 14 Sonoma or later, on Apple silicon and Intel.
 
-1. Download `Plinth-x.y.z.dmg` from [Releases](https://github.com/rubycatco/plinth/releases).
+1. Download Plinth from [plinth.fish](https://plinth.fish), or `Plinth-x.y.z.dmg` from [Releases](https://github.com/rubycatco/plinth/releases).
 2. Open it and drag Plinth into Applications.
 3. If an older Plinth is running, quit it first: right-click the fish and choose **Quit Plinth**.
 
