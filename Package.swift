@@ -8,7 +8,9 @@ let appStore = Context.environment["PLINTH_APPSTORE"] == "1"
 let package = Package(
     name: "Plinth",
     platforms: [.macOS(.v14)],
-    dependencies: appStore ? [] : [
+    // Declared in every build, though the App Store build doesn't link it,
+    // so that build leaves Package.resolved and its Sparkle pin alone.
+    dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1")
     ],
     targets: [
