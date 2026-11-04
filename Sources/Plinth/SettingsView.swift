@@ -261,6 +261,7 @@ private struct AboutSettings: View {
     static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
     static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
 
+    @Environment(Fish.self) private var fish
     private let inkFish = SkinOption.builtIn.first { $0.id == "builtin/ink-fish" } ?? .woodenFish
 
     var body: some View {
@@ -274,6 +275,8 @@ private struct AboutSettings: View {
                         .frame(width: 176, height: 176)
                         // The fish sits low in its sprite, under the mallet's arc.
                         .offset(y: -24)
+                        // The fish on the scroll is a fish: knock it and it sounds.
+                        .onTapGesture { fish.knock(byHand: false, preview: true) }
                 }
                 .padding(.top, 52)
                 .frame(maxWidth: .infinity)

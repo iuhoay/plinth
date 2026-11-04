@@ -568,13 +568,14 @@ final class Fish {
     }
 
     /// Light a stick of incense: one knock as it is lit, quiet while it burns,
-    /// three knocks as it goes out. Nothing is counted or kept.
+    /// three knocks as it goes out. The first is 止静, the start of a sitting,
+    /// and rings fully even just after a knock. Nothing is counted or kept.
     func lightIncense(minutes: Int) {
         incenseTask?.cancel()
         let stick = Incense(lit: .now, duration: Double(minutes) * 60)
         incense = stick
         endCall()
-        knock(byHand: false)
+        knock(byHand: false, full: true)
         incenseTask = Task { [weak self] in
             // The continuous clock keeps burning while the Mac sleeps.
             try? await Task.sleep(for: .seconds(stick.duration))
@@ -687,10 +688,17 @@ final class Fish {
         guard autoKnock, callTask == nil, bellTask == nil, !resting else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
-                guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }
-                try? await Task.sleep(for: .seconds(gap))
+                guard let next = self.map({ fish in
+                    var gap = fish.rhythm.gap(before: fish.rhythmStep, interval: fish.interval)
+                    // 煞板: the last three knocks of a mala's turn slow down, each
+                    // gap wider than the last, and the last rings fully into the quiet.
+                    let left = fish.stopAt108 ? 108 - fish.autoRound : 0
+                    if (1...3).contains(left) { gap = max(gap, fish.interval) * pow(1.5, Double(4 - left)) }
+                    return (gap: gap, last: left == 1)
+                }) else { return }
+                try? await Task.sleep(for: .seconds(next.gap))
                 guard let self, !Task.isCancelled else { return }
-                knock(byHand: false)
+                knock(byHand: false, full: next.last)
                 autoRound += 1
                 rhythmStep += 1
                 // One turn of the mala, then quiet. The quiet says the rest.
