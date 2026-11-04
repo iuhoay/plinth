@@ -2,11 +2,11 @@
 
 English · [简体中文](README.zh-Hans.md)
 
-A tiny wooden fish that lives on your Mac's desktop. Click it and it knocks with a soft *tok*. You earn no merit (功德) for it.
+A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*, nothing more. Knocking earns no merit (功德).
 
 ![Under 「并无功德」 ("No merit at all"), Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
 
-The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
+The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one on a small neon pedestal next to your windows.
 
 Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth keeps none. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」, none at all. Your first knock gets the same answer.
 
@@ -23,13 +23,13 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 ## Features
 
-- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
+- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the longer it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
 - **Auto-knock.** The fish keeps time on its own, every 0.4 to 4 seconds, in one of three rhythms: steady; quickening (起板), which starts slow, speeds into a roll and rests, the way a chant begins; or natural, with each gap a little longer or shorter. It can stop after 108 knocks, one full turn of a mala.
-- **A stick of incense.** Light one for 25, 45, or 60 minutes. The fish knocks once as you light it, stays quiet while it burns down, and knocks three times as it goes out. Plinth shows no clock and keeps no count.
+- **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock when you light it, silence while it burns down beside the fish, three knocks when it goes out. It keeps no clock and no count.
 - **Knock as you type.** If you turn it on, each key you press in any app knocks once, and after a pause the next key rings longer. It needs no special permission, because Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
-- **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
-- **Keeps itself current.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
+- **Out of the way.** No Dock icon. It floats above your windows or rests on the desktop, wherever you drag it.
+- **Updates.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
 - **Skins.** Twenty ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a blue-and-white porcelain fish, a singing bowl, a cloud gong, a bianzhong bell, a stone chime, a fish board, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a seal, and a mug. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. The abacus flicks a bead and keeps no count; the cloud gong and the bianzhong swing back on their cords, and the stone chime rocks. The seal leaves a 空 (empty) where it lands; the mug splashes, and the coffee stays in the cup. You can also make your own from a folder of sprite frames or a single image.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
@@ -66,7 +66,7 @@ Settings has three tabs:
 | --- | --- |
 | Knocking | Volume; space, from a meditation room to a great hall; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, in any rhythm, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
-| Why a Fish | The line from the old monastic rules on why the block is a fish. |
+| Why a Fish | Baizhang's line on why the block is a fish, set as an ink-wash hanging scroll. |
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
 
