@@ -92,6 +92,10 @@ final class Fish {
     static let liftDuration = 0.05
     /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
     static let quickImpactDelay = 0.03
+    /// A call's three knocks come this far apart, after as long a quiet, and
+    /// the call lasts as long as `callLength`. See `call()`.
+    static let callBeat = 1.6
+    static let callLength = callBeat * 3 + 2
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let sound = KnockSound()
@@ -125,6 +129,8 @@ final class Fish {
     /// The stick of incense burning beside the fish, if one is lit.
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
+    /// The fish calling you back, while it sounds. See `call()`.
+    @ObservationIgnored private var callTask: Task<Void, Never>?
 
     var autoKnock: Bool {
         didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; rhythmStep = 0; restartAuto() }
@@ -249,6 +255,16 @@ final class Fish {
     /// to 1 at its right. A `preview`, to hear a setting, always sounds and is
     /// never answered.
     func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false) {
+        // While the fish calls you back, other knocks keep quiet, so the call
+        // is heard. A knock by hand, or a setting changed, means you are here,
+        // and the call has done its work.
+        if callTask != nil {
+            if byHand || preview { endCall() } else { return }
+        }
+        strike(byHand: byHand, quick: quick, at: x, preview: preview)
+    }
+
+    private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false) {
         swing = Swing(serial: swing.serial + 1, quick: quick)
         let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
@@ -512,20 +528,17 @@ final class Fish {
         incenseTask?.cancel()
         let stick = Incense(lit: .now, duration: Double(minutes) * 60)
         incense = stick
+        endCall()
         knock(byHand: false)
         incenseTask = Task { [weak self] in
             // The continuous clock keeps burning while the Mac sleeps.
             try? await Task.sleep(for: .seconds(stick.duration))
             guard let self, !Task.isCancelled else { return }
             // The spent stick stays while the ember dies and its last smoke
-            // drifts away under the three knocks. A new stick lit between
-            // the knocks ends this one's.
-            for i in 0..<3 {
-                if i > 0 { try? await Task.sleep(for: .seconds(1.6)) }
-                guard !Task.isCancelled else { return }
-                knock(byHand: false)
-            }
-            try? await Task.sleep(for: .seconds(2))
+            // drifts away under the call. A new stick lit meanwhile ends
+            // this one's.
+            call()
+            try? await Task.sleep(for: .seconds(Self.callLength))
             guard !Task.isCancelled else { return }
             incense = nil
         }
@@ -535,6 +548,37 @@ final class Fish {
     func putOutIncense() {
         incenseTask?.cancel()
         incense = nil
+        endCall()
+    }
+
+    /// Call you back, as a stick of incense does when it goes out: three
+    /// knocks. So they are heard over auto-knock or typing, those keep quiet
+    /// for the call, and the three come after a quiet, which a knock rings
+    /// the fuller for. Auto-knock picks up again after. A call that comes
+    /// while one sounds is the same call. Like auto-knock, it is never answered.
+    func call() {
+        guard callTask == nil else { return }
+        autoTask?.cancel()
+        autoTask = nil
+        callTask = Task { [weak self] in
+            for _ in 0..<3 {
+                try? await Task.sleep(for: .seconds(Self.callBeat))
+                guard let self, !Task.isCancelled else { return }
+                strike(byHand: false)
+            }
+            try? await Task.sleep(for: .seconds(Self.callLength - Self.callBeat * 3))
+            guard let self, !Task.isCancelled else { return }
+            callTask = nil
+            restartAuto()
+        }
+    }
+
+    /// End a call before its last knock: you are here.
+    private func endCall() {
+        guard let callTask else { return }
+        callTask.cancel()
+        self.callTask = nil
+        restartAuto()
     }
 
     private func watchTyping() {
@@ -544,7 +588,7 @@ final class Fish {
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
-        guard autoKnock else { return }
+        guard autoKnock, callTask == nil else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }
