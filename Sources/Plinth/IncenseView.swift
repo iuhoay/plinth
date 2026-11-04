@@ -93,7 +93,7 @@ struct IncenseView: View {
             let dx = (hash(seed, k, 1) - 0.5) * cw * 0.3, dy = (hash(seed, k, 2) - 0.3) * ch * 0.06
             let r = side * (0.004 + 0.003 * hash(seed, k, 3))
             gc.fill(Path(ellipseIn: CGRect(x: x + dx - r * 1.4, y: plant.y + dy - r * 0.5, width: r * 2.8, height: r)),
-                    with: .color(Color(white: 0.5 + 0.15 * hash(seed, k, 4)).opacity(0.6)))
+                    with: .color(Color(white: 0.34 + 0.1 * hash(seed, k, 4)).opacity(0.6)))
         }
 
         gc.fill(Path(CGRect(x: x - stemWidth / 2, y: stemTop, width: stemWidth, height: plant.y - stemTop)),
@@ -138,15 +138,15 @@ struct IncenseView: View {
             let w = coatWidth * 1.08
             cap.fill(Path(roundedRect: CGRect(x: -w / 2, y: -ash.length, width: w, height: ash.length + 0.5), cornerRadius: w * 0.45),
                      with: .linearGradient(
-                        Gradient(stops: [.init(color: Color(white: 0.78), location: 0),
-                                         .init(color: Color(white: 0.66), location: 0.6),
-                                         .init(color: Color(white: 0.3), location: 1)]),
+                        Gradient(stops: [.init(color: Color(white: 0.56), location: 0),
+                                         .init(color: Color(white: 0.47), location: 0.6),
+                                         .init(color: Color(white: 0.24), location: 1)]),
                         startPoint: CGPoint(x: 0, y: -ash.length), endPoint: .zero))
             // Fine rings where the ash has cracked as it cooled.
             var ring = -coatWidth * 0.9
             while ring > -ash.length + coatWidth * 0.4 {
                 cap.fill(Path(CGRect(x: -w / 2, y: ring, width: w, height: max(side * 0.0015, 0.5))),
-                         with: .color(Color(white: 0.4).opacity(0.45)))
+                         with: .color(Color(white: 0.3).opacity(0.45)))
                 ring -= coatWidth * 1.1
             }
         }
@@ -163,7 +163,7 @@ struct IncenseView: View {
                 flake.translateBy(x: x + (hash(seed, drop.index, 5) - 0.5) * cw * 0.2 * p, y: y)
                 flake.rotate(by: .radians(lean + p * p * 1.4 * (hash(seed, drop.index, 6) - 0.5)))
                 flake.fill(Path(roundedRect: CGRect(x: -coatWidth / 2, y: 0, width: coatWidth, height: drop.length),
-                                cornerRadius: coatWidth * 0.45), with: .color(Color(white: 0.7)))
+                                cornerRadius: coatWidth * 0.45), with: .color(Color(white: 0.5)))
             }
         }
 
