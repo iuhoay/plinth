@@ -59,3 +59,15 @@
 
 /* Shortcuts: the Knock action */
 "Knocks once." = "敲一下。";
+
+/* Auto-knock rhythm */
+"Rhythm" = "敲法";
+"Steady" = "匀速";
+"Quickening" = "起板";
+"Natural" = "随性";
+"Quickening starts slow and quickens into a roll, as a chant begins, then rests. Natural lets each gap run a little long or short, like a hand keeping time." = "起板：由慢到快，敲成一串，像诵经开头那样，然后停一停。随性：每一下的间隔稍长或稍短，像人手打拍子。";
+
+/* Settings: the room the knock rings in */
+"Space" = "空间";
+"Meditation room" = "禅房";
+"Great hall" = "大殿";

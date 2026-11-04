@@ -23,8 +23,8 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 ## Features
 
-- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings.
-- **Auto-knock.** Let it keep a steady rhythm (every 0.4 to 4 seconds), with an option to stop after 108 knocks, one full turn of a mala.
+- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
+- **Auto-knock.** Let it keep time on its own (every 0.4 to 4 seconds): steadily, quickening from slow into a roll and resting, as a chant begins (起板), or naturally, each gap a little long or short. There's an option to stop after 108 knocks, one full turn of a mala.
 - **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock as it's lit, quiet while it burns down beside the fish, three knocks as it goes out. No clock, no count.
 - **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
@@ -50,7 +50,7 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Menu item | What it does |
 | --- | --- |
 | Knock | Knocks once. |
-| Auto-Knock | Knocks on its own, at the **Pace** you pick: every 2, 1, or 0.5 seconds. |
+| Auto-Knock | Knocks on its own, at the **Pace** you pick (every 2, 1, or 0.5 seconds), in the **Rhythm** you pick: Steady, Quickening, or Natural. |
 | Knock as You Type | Knocks once for each key you press, in any app. |
 | Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
 | Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
@@ -62,7 +62,7 @@ Settings has three tabs:
 
 | Tab | Settings |
 | --- | --- |
-| Knocking | Volume; knock as you type; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. |
+| Knocking | Volume; space, from a meditation room to a great hall; knock as you type; auto-knock at any interval from 0.4 to 4 seconds, in any rhythm, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
 | Why a Fish | The line from the old monastic rules on why the block is a fish. |
 

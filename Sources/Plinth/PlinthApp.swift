@@ -43,8 +43,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel.setFrameAutosaveName("PlinthPanel")
         fish.onWindowChange = { [weak self] in self?.layoutPanel() }
+        // The knock comes from where the fish sits, and follows it when dragged.
+        NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: panel, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.placeSound() }
+        }
         layoutPanel()
         panel.orderFrontRegardless()
+        placeSound()
+    }
+
+    private func placeSound() {
+        guard let screen = panel.screen ?? NSScreen.main else { return }
+        Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width)
     }
 
     /// `plinth://knock` knocks once, so scripts and other apps can knock.
