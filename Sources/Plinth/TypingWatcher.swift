@@ -1,25 +1,39 @@
 import AppKit
 import CoreGraphics
 
-/// Notices key presses in any app, for "Knock as you type", without any
-/// special permission. It never sees which key: it only asks macOS how long
-/// ago a key last went down or came up (the counters idle timers use).
+/// Notices key presses in any app, for "Knock as you type" and the bell,
+/// without any special permission. It never sees which key: it only asks macOS
+/// how long ago a key last went down or came up (the counters idle timers use).
 @MainActor
 final class TypingWatcher {
     var onPress: () -> Void = {}
 
     private var timer: DispatchSourceTimer?
+    /// Whether the timer asks often enough to knock with each key. For the
+    /// bell alone it asks about once a second, so the Mac is seldom woken for it.
+    private var keyByKey = false
     private var lastDown = 0.0
     private var lastPress = 0.0
     /// When the current run of key presses with no key coming up began.
     private var heldSince = 0.0
 
-    func start() {
-        guard timer == nil else { return }
-        lastDown = Self.lastEvent(.keyDown)
-        heldSince = lastDown
+    /// Start watching, or go on at a new pace. With `keyByKey`, each press is
+    /// noticed as it happens; without it, within about a second.
+    func start(keyByKey: Bool) {
+        if let timer {
+            guard keyByKey != self.keyByKey else { return }
+            timer.cancel()
+        } else {
+            lastDown = Self.lastEvent(.keyDown)
+            heldSince = lastDown
+        }
+        self.keyByKey = keyByKey
         let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(25), leeway: .milliseconds(5))
+        if keyByKey {
+            timer.schedule(deadline: .now(), repeating: .milliseconds(25), leeway: .milliseconds(5))
+        } else {
+            timer.schedule(deadline: .now(), repeating: .seconds(1), leeway: .milliseconds(500))
+        }
         timer.setEventHandler { [weak self] in
             MainActor.assumeIsolated { self?.check() }
         }

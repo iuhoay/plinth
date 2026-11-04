@@ -24,7 +24,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 ## Features
 
 - **Knock it.** Click the fish and the mallet falls. No two knocks are alike: a firmer press lands harder and brighter, and a knock off the top sounds more of the shell. The longer the silence before a knock, the longer it rings. It sounds from where the fish sits, in a room you choose, from a meditation room to a great hall; on headphones you can hear where. A run of knocks rings on together. On a Force Touch trackpad, you feel the mallet land.
-- **Auto-knock.** Every 0.4 to 8 seconds, slow enough to follow a breath: steady, quickening (起板), or natural. It can stop at 108, one turn of a mala. While the screens sleep, it rests too.
+- **Auto-knock.** Every 0.4 to 8 seconds, slow enough to follow a breath: steady, quickening (起板), or natural. It can stop at 108, one turn of a mala. An hour after the screens go to sleep, it rests too, so the Mac can sleep.
 - **A stick of incense.** 25, 45, or 60 minutes. One knock to light it, three when it goes out, silence between. No clock, no count.
 - **Knock as you type.** Optional. Each key, in any app, knocks once; after a pause, the knock rings longer. Plinth never learns which key.
 - **A knock to pause.** Optional. After half an hour of typing with no rest, the fish knocks once: stop, and take three breaths. Nothing is counted.
