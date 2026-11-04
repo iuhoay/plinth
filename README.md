@@ -61,6 +61,8 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Settings… | Opens Settings. |
 | Quit Plinth | Quits. |
 
+When Dongshan came to see that the insentient preach the Dharma, he wrote: 「也大奇！也大奇！无情说法不思议，若将耳听终难会，眼处闻声方得知。」 "How marvelous! How marvelous! The insentient preach the Dharma, past all thinking. Listen with the ears and you will never get it; hear the sound with the eyes, and you will know." *Heard, not seen* leaves the fish to the ears alone.
+
 Settings has three tabs:
 
 | Tab | Settings |
