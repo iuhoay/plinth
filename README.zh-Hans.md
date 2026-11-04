@@ -91,7 +91,7 @@ my-skin/
 └── skin.json   { "name": "我的皮肤", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-皮肤放在 `~/Library/Application Support/Plinth/Skins/`，也可以用 **皮肤 → 添加皮肤…** 添加。App 运行时，这里的改动会自动生效。
+皮肤放在 `~/Library/Application Support/Plinth/Skins/`，也可以用 **皮肤 → 添加皮肤…** 添加。分享皮肤时，发一个 `.plinthskin` 文件就行：双击它，或者把它拖到木鱼上，就装好了。App 运行时，这里的改动会自动生效。
 
 完整规格见[皮肤格式](docs/SKINS.zh-Hans.md)：每个文件和每个键、十二种敲击声、木槌和敲击效果的定位、动画节奏，以及内置皮肤一览。
 

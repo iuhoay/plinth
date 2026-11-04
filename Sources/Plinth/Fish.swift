@@ -268,24 +268,68 @@ final class Fish {
         }
     }
 
-    /// Copy the images or skin folders the user picks into the skins folder
-    /// and wear the first.
+    /// Add the images, skin folders or `.plinthskin` files the user picks.
     func addSkins() {
         NSApp.activate(ignoringOtherApps: true)
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.image]
+        panel.allowedContentTypes = [.image, SkinArchive.type]
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.message = String(localized: "Choose images, or skin folders that contain idle.png")
+        panel.message = String(localized: "Choose images, skin folders that contain idle.png, or .plinthskin files")
         guard panel.runModal() == .OK else { return }
+        install(panel.urls)
+    }
+
+    /// Copy images, skin folders and `.plinthskin` files into the skins folder,
+    /// replacing any of the same name, and wear the first.
+    func install(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
         var added: [String] = []
-        for url in panel.urls {
-            let dest = Self.skinsDirectory.appending(path: url.lastPathComponent)
+        var refused: [String] = []
+        for url in urls {
+            var source = url
+            var name = url.lastPathComponent
+            let scratch = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: scratch) }
+            if url.pathExtension.lowercased() == "plinthskin" {
+                guard let folder = try? SkinArchive.unpack(url, into: scratch) else {
+                    refused.append(url.lastPathComponent)
+                    continue
+                }
+                source = folder
+                // The folder inside keeps its name when a download is renamed "skin (1)".
+                name = folder == scratch ? url.deletingPathExtension().lastPathComponent : folder.lastPathComponent
+            }
+            let dest = Self.skinsDirectory.appending(path: name)
             try? FileManager.default.removeItem(at: dest)
-            if (try? FileManager.default.copyItem(at: url, to: dest)) != nil { added.append(dest.lastPathComponent) }
+            if (try? FileManager.default.copyItem(at: source, to: dest)) != nil, SkinPack.load(dest) != nil {
+                added.append(name)
+            } else {
+                try? FileManager.default.removeItem(at: dest)
+                refused.append(url.lastPathComponent)
+            }
         }
         refreshSkins()
         if let first = added.first { skin = first }
+        if !refused.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "Some skins couldn't be added")
+            alert.informativeText = refused.joined(separator: "\n") + "\n\n"
+                + String(localized: "A skin is an image, or a folder with idle.png. A .plinthskin file is such a folder, zipped.")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
+
+    /// Save a skin of your own as a `.plinthskin` file, to share.
+    func export(_ option: SkinOption) {
+        let folder = Self.skinsDirectory.appending(path: option.id)
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [SkinArchive.type]
+        panel.nameFieldStringValue = "\(option.id).plinthskin"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        if !SkinArchive.pack(folder, to: url) { NSSound.beep() }
     }
 
     /// Pick up skin images added, replaced or removed while the app runs.

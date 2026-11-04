@@ -12,11 +12,25 @@ Plinth reads your skins from:
 ~/Library/Application Support/Plinth/Skins/
 ```
 
-Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images or folders into it. Copying replaces any skin of the same name that is already there.
+Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
 
 Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twelve built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
 A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the wooden fish.
+
+## Sharing a skin: .plinthskin
+
+A `.plinthskin` file is a folder skin in a zip archive, to share as one file. Double-click it, drop it on the fish, or pick it in **Add Skins…**: Plinth unpacks it into the skins folder and wears it.
+
+The archive holds either the skin folder itself, which names the skin, or the skin's files at its top level, in which case the skin is named after the archive. An archive with anything else in it, with no `idle.png`, or with a symbolic link is refused.
+
+To make one, right-click a skin of your own in **Settings → Skins** and choose **Export as .plinthskin…**, or run:
+
+```sh
+ditto -c -k --keepParent my-skin my-skin.plinthskin
+```
+
+Finder's **Compress** works too; rename the `.zip` to `.plinthskin`.
 
 ## Single-image skins
 

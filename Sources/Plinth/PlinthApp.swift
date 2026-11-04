@@ -59,8 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// `plinth://knock` knocks once, so scripts and other apps can knock.
+    /// Files opened with Plinth, such as `.plinthskin`, are installed as skins.
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls where url.host() == "knock" {
+        Fish.shared.install(urls.filter(\.isFileURL))
+        for url in urls where url.scheme == "plinth" && url.host() == "knock" {
             Fish.shared.knock(byHand: false)
         }
     }

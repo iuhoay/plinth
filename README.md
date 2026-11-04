@@ -91,7 +91,7 @@ my-skin/
 └── skin.json   { "name": "My Skin", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. Plinth picks up changes while it runs.
+Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share one, send it as a `.plinthskin` file: double-click one, or drop it on the fish, to install it. Plinth picks up changes while it runs.
 
 The [skin format](docs/SKINS.md) has the full specification: every file and key, the twelve knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 
