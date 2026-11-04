@@ -18,22 +18,37 @@ private struct KnockingSettings: View {
         @Bindable var fish = fish
         Form {
             Section {
+                // Let go of a slider and the fish knocks once, to hear it.
                 LabeledContent("Volume") {
                     Slider(value: $fish.volume, in: 0...1) {
                         EmptyView()
                     } minimumValueLabel: {
-                        Image(systemName: "speaker.fill").foregroundStyle(.secondary)
+                        VolumeEnd.end(loud: false)
                     } maximumValueLabel: {
-                        Image(systemName: "speaker.wave.3.fill").foregroundStyle(.secondary)
+                        VolumeEnd.end(loud: true)
+                    } onEditingChanged: { editing in
+                        if !editing { fish.preview() }
                     }
                 }
                 LabeledContent("Space") {
-                    Slider(value: $fish.space, in: 0...1) {
-                        EmptyView()
-                    } minimumValueLabel: {
-                        Text("Meditation room").foregroundStyle(.secondary)
-                    } maximumValueLabel: {
-                        Text("Great hall").foregroundStyle(.secondary)
+                    VStack(spacing: 3) {
+                        // The volume's speakers, unseen, so the two tracks line up.
+                        Slider(value: $fish.space, in: 0...1) {
+                            EmptyView()
+                        } minimumValueLabel: {
+                            VolumeEnd.end(loud: false).hidden()
+                        } maximumValueLabel: {
+                            VolumeEnd.end(loud: true).hidden()
+                        } onEditingChanged: { editing in
+                            if !editing { fish.preview() }
+                        }
+                        HStack {
+                            Text("Meditation room")
+                            Spacer()
+                            Text("Great hall")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
             } header: {
@@ -43,12 +58,17 @@ private struct KnockingSettings: View {
                     .settingsFootnote()
             }
             Section {
-                Toggle("Knock on its own", isOn: $fish.autoKnock)
+                Toggle("Knock on its own", isOn: $fish.autoKnock.animation(.snappy))
                 // Only what applies: the pace and rhythm appear once it knocks.
                 if fish.autoKnock {
                     LabeledContent("Every") {
                         HStack {
-                            Slider(value: $fish.interval, in: 0.4...4) {
+                            // Even steps in proportion, not in seconds: from 0.4 s to 0.8 s
+                            // is as far as from 2 s to 4 s. Tenths of a second.
+                            Slider(value: Binding(get: { log(fish.interval) }, set: {
+                                let seconds = (exp($0) * 10).rounded() / 10
+                                if seconds != fish.interval { fish.interval = seconds }
+                            }), in: log(0.4)...log(4)) {
                                 EmptyView()
                             } minimumValueLabel: {
                                 Image(systemName: "hare").foregroundStyle(.secondary)
@@ -162,7 +182,11 @@ private struct SkinSettings: View {
     private func grid(_ options: [SkinOption], exportable: Bool = false) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
             ForEach(options) { option in
-                SkinTile(option: option, selected: option.id == fish.skin) { fish.skin = option.id }
+                SkinTile(option: option, selected: option.id == fish.skin) {
+                    fish.skin = option.id
+                    // A knock in the skin's own voice.
+                    fish.preview()
+                }
                     .contextMenu {
                         // A folder skin goes out as one .plinthskin file; a single image is shared as it is.
                         if exportable, (try? Fish.skinsDirectory.appending(path: option.id).resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
@@ -184,7 +208,7 @@ private struct SkinTile: View {
     var body: some View {
         Button(action: choose) {
             VStack(spacing: 4) {
-                Image(nsImage: Self.thumbnail(option.pack.idle))
+                Image(nsImage: option.pack.idle.thumbnail(side: 152))
                     .resizable()
                     .scaledToFit()
                     .frame(width: 76, height: 76)
@@ -202,25 +226,27 @@ private struct SkinTile: View {
                 .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2))
             .contentShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TileButtonStyle())
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.15), value: hovering)
         .help(option.title)
     }
+}
 
-    /// The figure alone, without the empty air its frame keeps for the
-    /// mallet, so every tile shows the skin rather than space. Kept, as
-    /// finding the figure reads every pixel. Kept on the source image itself,
-    /// so it goes when the skins are read afresh and the old images do.
-    private static var thumbnailKey: UInt8 = 0
-    private static func thumbnail(_ idle: NSImage) -> NSImage {
-        if let done = objc_getAssociatedObject(idle, &thumbnailKey) as? NSImage { return done }
-        let made = idle.menuBarIcon(side: 152)
-        // An image that could not be cropped comes back as itself; holding it would keep it forever.
-        if made !== idle {
-            objc_setAssociatedObject(idle, &thumbnailKey, made, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-        return made
+/// A tile gives a little under the pointer as it is pressed.
+private struct TileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.spring(duration: 0.2, bounce: 0.4), value: configuration.isPressed)
+    }
+}
+
+/// The speakers at the ends of the volume slider.
+private enum VolumeEnd {
+    /// One type for both ends, as a slider's two labels must be.
+    static func end(loud: Bool) -> some View {
+        Image(systemName: loud ? "speaker.wave.3.fill" : "speaker.fill").foregroundStyle(.secondary)
     }
 }
 
