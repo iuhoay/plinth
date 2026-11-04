@@ -161,7 +161,7 @@ struct FishMenu: View {
     @Environment(\.openSettings) private var openSettings
 
     /// The paces the menu offers; Settings can set any other.
-    private static let paces = [2.0, 1.0, 0.5]
+    private static let paces = [6.0, 2.0, 1.0, 0.5]
 
     var body: some View {
         @Bindable var fish = fish
@@ -169,6 +169,8 @@ struct FishMenu: View {
         Divider()
         Toggle("Auto-Knock", isOn: $fish.autoKnock)
         Picker("Pace", selection: $fish.interval) {
+            // About one breath out: a knock to each, to follow the breath by.
+            Text("With the breath · every 6 s").tag(6.0)
             Text("Slow · every 2 s").tag(2.0)
             Text("Moderate · every 1 s").tag(1.0)
             Text("Fast · every 0.5 s").tag(0.5)

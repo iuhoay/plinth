@@ -24,11 +24,12 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 ## Features
 
 - **Knock it.** Click the fish and the mallet falls. No two knocks are alike: a firmer press lands harder and brighter, and a knock off the top sounds more of the shell. The longer the silence before a knock, the longer it rings. It sounds from where the fish sits, in a room you choose, from a meditation room to a great hall; on headphones you can hear where. A run of knocks rings on together. On a Force Touch trackpad, you feel the mallet land.
-- **Auto-knock.** Every 0.4 to 4 seconds: steady, quickening (起板), or natural. It can stop at 108, one turn of a mala.
+- **Auto-knock.** Every 0.4 to 8 seconds, slow enough to follow a breath: steady, quickening (起板), or natural. It can stop at 108, one turn of a mala. An hour after the screens go to sleep, it rests too, so the Mac can sleep.
 - **A stick of incense.** 25, 45, or 60 minutes. One knock to light it, three when it goes out, silence between. No clock, no count.
 - **Knock as you type.** Optional. Each key, in any app, knocks once; after a pause, the knock rings longer. Plinth never learns which key.
+- **A knock to pause.** Optional. After half an hour of typing with no rest, the fish knocks once: stop, and take three breaths. Nothing is counted.
 - **A few words.** The fish has a few things to say, and says each of them once.
-- **Out of the way.** No Dock icon. Above your windows or on the desktop, wherever you put it.
+- **Out of the way.** No Dock icon. Above your windows or on the desktop, wherever you put it, or not on screen at all: heard, not seen.
 - **Updates.** Checks GitHub once a day and asks before installing. You can turn this off.
 - **Skins.** Twenty-one, each with its own mallet and knock. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling. You can also make your own from a single image or a folder of frames.
 
@@ -51,20 +52,22 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Menu item | What it does |
 | --- | --- |
 | Knock | Knocks once. |
-| Auto-Knock | Knocks on its own, at the **Pace** you pick (every 2, 1, or 0.5 seconds), in the **Rhythm** you pick: Steady, Quickening, or Natural. |
+| Auto-Knock | Knocks on its own, at the **Pace** you pick (every 6 seconds, with the breath, or every 2, 1, or 0.5 seconds), in the **Rhythm** you pick: Steady, Quickening, or Natural. |
 | Knock as You Type | Knocks once for each key you press, in any app. |
 | Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
-| Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
+| Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. **Heard, not seen** leaves only its knock and the menu bar icon, and the fish keeps its words to itself. |
 | Skin | Picks a skin, adds your own, opens the skins folder, or browses the community gallery. |
 | Check for Updates… | Asks GitHub for a newer Plinth now. It reads **Update Available…** when one is waiting. |
 | Settings… | Opens Settings. |
 | Quit Plinth | Quits. |
 
+When Dongshan came to see that the insentient preach the Dharma, he wrote: 「也大奇！也大奇！无情说法不思议，若将耳听终难会，眼处闻声方得知。」 "How marvelous! How marvelous! The insentient preach the Dharma, past all thinking. Listen with the ears and you will never get it; hear the sound with the eyes, and you will know." *Heard, not seen* leaves the fish to the ears alone.
+
 Settings has three tabs:
 
 | Tab | Settings |
 | --- | --- |
-| Knocking | Volume; space, from a meditation room to a great hall; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, in any rhythm, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
+| Knocking | Volume; space, from a meditation room to a great hall; knock as you type; a knock when it's time to pause; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 8 seconds, in any rhythm, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
 | Why a Fish | Baizhang's line on why the block is a fish, set as an ink-wash hanging scroll. |
 
@@ -77,6 +80,8 @@ make test; open -g plinth://call
 ```
 
 A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early.
+
+In the *Gateless Gate*, Master Ruiyan called to himself every day, 「主人公」 ("Master!"), and answered himself, 「诺」 ("Yes?"). Then: "Wide awake! Yes. Some other day, don't let anyone fool you! Yes, yes." The fish only calls; answering is up to you.
 
 A coding agent can call you when it can't go on without you. In Claude Code, add this hook to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish calls you when Claude stops to ask your permission. It doesn't call at the end of every reply, since you are often there to read it:
 

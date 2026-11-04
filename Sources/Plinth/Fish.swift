@@ -6,12 +6,14 @@ import ServiceManagement
 import UniformTypeIdentifiers
 
 enum Placement: String, CaseIterable, Identifiable {
-    case floating, desktop
+    /// `unseen`: no fish on screen, only its knock and the menu bar icon.
+    case floating, desktop, unseen
     var id: Self { self }
     var title: String {
         switch self {
         case .floating: String(localized: "Above windows")
         case .desktop: String(localized: "On the desktop")
+        case .unseen: String(localized: "Heard, not seen")
         }
     }
 }
@@ -96,6 +98,16 @@ final class Fish {
     /// the call lasts as long as `callLength`. See `call()`.
     static let callBeat = 1.6
     static let callLength = callBeat * 3 + 2
+    /// The bell: after this long at the keyboard with no rest of `rest`, typed
+    /// knocks fall quiet, and after `bellQuiet` one full knock, set apart from
+    /// them as a hall's signal is; they keep quiet `breaths` more, about three breaths.
+    static let bellAfter = 30.0 * 60
+    static let rest = 3.0 * 60
+    static let bellQuiet = 3.0
+    static let breaths = 15.0
+    /// Auto-knock goes on this long after the screens sleep, as through a
+    /// sitting with closed eyes, then rests, so the Mac can sleep too.
+    static let darkFor = 60.0 * 60
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let sound = KnockSound()
@@ -131,6 +143,17 @@ final class Fish {
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
     /// The fish calling you back, while it sounds. See `call()`.
     @ObservationIgnored private var callTask: Task<Void, Never>?
+    /// When the last key went down, and when the stretch of typing it belongs
+    /// to began, on a clock that keeps going while the Mac sleeps, since a
+    /// night's sleep is a rest. Kept only for the bell, never stored.
+    @ObservationIgnored private var lastTyped = -Double.infinity
+    @ObservationIgnored private var typingSince = 0.0
+    /// Until when typed knocks keep quiet, after the bell.
+    @ObservationIgnored private var hushUntil = 0.0
+    /// The screens have slept for `darkFor`, and auto-knock rests until they
+    /// wake. `restSoon` waits for that, while they sleep.
+    @ObservationIgnored private var resting = false
+    @ObservationIgnored private var restSoon: Task<Void, Never>?
 
     var autoKnock: Bool {
         didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; rhythmStep = 0; restartAuto() }
@@ -145,6 +168,11 @@ final class Fish {
     /// Each key pressed in any app knocks once. Typed knocks are never answered.
     var knockAsYouType: Bool {
         didSet { defaults.set(knockAsYouType, forKey: "knockAsYouType"); watchTyping() }
+    }
+    /// After a long stretch of typing, one knock to stop and breathe: the fish
+    /// that never sleeps, keeping you from dozing off at the keyboard.
+    var bell: Bool {
+        didSet { defaults.set(bell, forKey: "bell"); watchTyping() }
     }
     var volume: Double { didSet { defaults.set(volume, forKey: "volume") } }
     /// The room the knock rings in: 0 a small meditation room, 1 a great hall.
@@ -230,6 +258,7 @@ final class Fish {
         rhythm = Rhythm(rawValue: d.string(forKey: "rhythm") ?? "") ?? .steady
         stopAt108 = d.bool(forKey: "stopAt108")
         knockAsYouType = d.bool(forKey: "knockAsYouType")
+        bell = d.bool(forKey: "bell")
         volume = d.double(forKey: "volume")
         space = d.double(forKey: "space")
         quietWhileMicInUse = d.bool(forKey: "quietWhileMicInUse")
@@ -241,8 +270,16 @@ final class Fish {
         loadSkin()
         watchSkins()
         restartAuto()
-        typing.onPress = { [weak self] in self?.knock(byHand: false, quick: true) }
+        typing.onPress = { [weak self] in self?.typed() }
         watchTyping()
+        // A while after the screens sleep, auto-knock rests, and the Mac can sleep.
+        let workspace = NSWorkspace.shared.notificationCenter
+        workspace.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.screensSlept() }
+        }
+        workspace.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.screensWoke() }
+        }
         pressMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .pressure]) { [weak self] event in
             self?.feel(event)
             return event
@@ -380,7 +417,8 @@ final class Fish {
     private func speak() {
         let said = defaults.integer(forKey: "said")
         let today = Self.today()
-        guard said < Zen.sayings.count, defaults.string(forKey: "lastSaidDay") != today else { return }
+        // An unseen fish has no words either; they wait until it is seen.
+        guard placement != .unseen, said < Zen.sayings.count, defaults.string(forKey: "lastSaidDay") != today else { return }
         defaults.set(said + 1, forKey: "said")
         defaults.set(today, forKey: "lastSaidDay")
         let saying = Zen.sayings[said]
@@ -582,13 +620,56 @@ final class Fish {
     }
 
     private func watchTyping() {
-        if knockAsYouType { typing.start() } else { typing.stop() }
+        if knockAsYouType || bell { typing.start(keyByKey: knockAsYouType) } else { typing.stop() }
+    }
+
+    /// A key went down, in some app. It knocks, if knocking as you type; and
+    /// once you have typed long enough without a rest, the bell knocks instead.
+    private func typed() {
+        let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
+        if now - lastTyped > Self.rest { typingSince = now }
+        lastTyped = now
+        // A call already has your ear; the bell waits for the next key after it.
+        if bell && callTask == nil && now - typingSince >= Self.bellAfter {
+            typingSince = now
+            hushUntil = now + Self.bellQuiet + Self.breaths
+            // A quiet first, so the bell isn't lost among typed knocks.
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(Self.bellQuiet))
+                self?.knock(byHand: false)
+            }
+        } else if knockAsYouType && now >= hushUntil {
+            knock(byHand: false, quick: true)
+        }
+    }
+
+    /// With eyes closed, the screens may sleep while you sit: auto-knock goes
+    /// on for `darkFor`. Left knocking past that, it rests.
+    private func screensSlept() {
+        restSoon?.cancel()
+        restSoon = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.darkFor))
+            guard let self, !Task.isCancelled else { return }
+            restSoon = nil
+            resting = true
+            restartAuto()
+        }
+    }
+
+    /// The screens are awake: auto-knock starts again if it was resting, and
+    /// otherwise keeps its beat.
+    private func screensWoke() {
+        restSoon?.cancel()
+        restSoon = nil
+        guard resting else { return }
+        resting = false
+        restartAuto()
     }
 
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
-        guard autoKnock, callTask == nil else { return }
+        guard autoKnock, callTask == nil, !resting else { return }
         autoTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let gap = self.map({ $0.rhythm.gap(before: $0.rhythmStep, interval: $0.interval) }) else { return }
