@@ -110,3 +110,5 @@ PLINTH_NOTARY_PROFILE=plinth-notary \
 ```
 
 Without those variables, `./scripts/make_dmg.sh` makes an ad hoc signed image, which opens on your own Mac but not on others.
+
+The script lays out the image's window with [dmgbuild](https://github.com/dmgbuild/dmgbuild), which it installs from PyPI into a temporary virtual environment, so it needs network access and a `python3` of 3.10 or later (the one that ships with macOS is 3.9). The packages are pinned by hash in `scripts/dmgbuild-requirements.txt`.

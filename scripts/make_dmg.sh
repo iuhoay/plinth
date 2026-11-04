@@ -32,8 +32,11 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 # dmgbuild lays out the window (background, icon positions) by writing its
 # .DS_Store directly, so it needs no Finder or AppleScript, even on CI.
+# It runs while the signing identity and notarization key are usable, so it
+# is installed only from wheels whose hashes are pinned in the requirements.
 python3 -m venv "$STAGE/venv"
-"$STAGE/venv/bin/pip" install --quiet --disable-pip-version-check "dmgbuild==1.6.7"
+"$STAGE/venv/bin/pip" install --quiet --disable-pip-version-check \
+  --require-hashes --only-binary :all: --no-deps -r scripts/dmgbuild-requirements.txt
 # One TIFF holding the 1x and @2x backgrounds, so Retina screens get the sharp one.
 tiffutil -cathidpicheck App/DMGBackground.png App/DMGBackground@2x.png -out "$STAGE/background.tiff" 2>/dev/null
 rm -f "$DMG"
