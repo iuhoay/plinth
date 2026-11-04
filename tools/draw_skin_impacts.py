@@ -40,11 +40,19 @@ for name, color in [
         r = np.hypot(dx, dy / 0.48)
 
     a = np.zeros_like(r)
+    shade = np.zeros_like(r)
     for radius, strength in [(0.42, 0.9), (0.77, 0.55)]:
         a += strength * np.exp(-((r - radius) / 0.023) ** 2)
         a += strength * 0.18 * np.exp(-((r - radius) / 0.065) ** 2)
+        # A faint shadow just outside each ring, lost on a dark desktop, so a
+        # pale ring still shows over a light one.
+        shade += strength * 0.32 * np.exp(-((r - radius - 0.03) / 0.03) ** 2)
     a = np.clip(a, 0, 1)
-    rgb = np.broadcast_to(np.array(color), (N, N, 3))
-    pixels = np.dstack([rgb, a * 255]).astype(np.uint8)
+    shade = np.clip(shade, 0, 1)
+    # The ring over its shadow, in a darker shade of its own colour.
+    alpha = a + shade * (1 - a)
+    dark = np.array(color) * 0.35
+    rgb = (np.array(color) * a[..., None] + dark * (shade * (1 - a))[..., None]) / np.maximum(alpha, 1e-6)[..., None]
+    pixels = np.dstack([rgb, alpha * 255]).round().astype(np.uint8)
     image = Image.fromarray(pixels).resize((256, 256), Image.Resampling.LANCZOS)
     image.save(Path(sys.argv[1]) / name / "impact.png", optimize=True)

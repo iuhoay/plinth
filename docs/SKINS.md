@@ -114,7 +114,7 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `chime` | A thin slab of hanging stone: a long, soft-edged ring. |
 | `board` | The long wooden fish that hangs outside the hall: lower and longer than `wood`. |
 | `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
-| `temple` | A big old temple fish under a cloth-wrapped mallet: lower and rounder than `wood`, with the click padded away. |
+| `temple` | A big old temple fish under a cloth-wrapped mallet: the lowest of the wooden fishes, a long hollow ring, and a soft *dok* where the click was. |
 
 Every knock is synthesized as the mallet falls, louder and brighter the harder it lands, and with more of the shell and less of the hollow the further from the strike point. Each voice is tuned at a medium blow on the strike point. Every knock rings on in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
@@ -183,7 +183,7 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | no | own | own |
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
-| `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.295 | no | own | own |
+| `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | no | own | own |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
 
