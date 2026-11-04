@@ -45,6 +45,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fish.onWindowChange = { [weak self] in self?.layoutPanel() }
         layoutPanel()
         panel.orderFrontRegardless()
+        Updates.shared.start()
+    }
+
+    /// `plinth://knock` knocks once, so scripts and other apps can knock.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.host() == "knock" {
+            Fish.shared.knock(byHand: false)
+        }
     }
 
     private func panelSize() -> NSSize {

@@ -1,12 +1,13 @@
 #!/bin/bash
-# Build build/Plinth.app (universal). Needs macOS 14+ and Xcode.
+# Build build/Plinth.app (universal). Needs macOS 14+ and Xcode 16.3+.
 #
 # Signed ad hoc by default, which is fine on your own Mac. To sign for
 # distribution, set PLINTH_SIGN_IDENTITY to a Developer ID Application
 # certificate in your keychain, e.g. "Developer ID Application: Name (TEAMID)";
 # the app then gets the hardened runtime and secure timestamp that
-# notarization requires. PLINTH_VERSION and PLINTH_BUILD override the
-# version (e.g. 1.2.0) and build number in Info.plist.
+# notarization requires, and keeps its update feed (an ad hoc build doesn't
+# update itself). PLINTH_VERSION and PLINTH_BUILD override the version
+# (e.g. 1.2.0) and build number in Info.plist.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,6 +20,26 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Plinth"
 cp -R App/Resources/* "$APP/Contents/Resources/"
 cp App/Info.plist "$APP/Contents/Info.plist"
+mkdir -p "$APP/Contents/Frameworks"
+# ditto keeps the framework's relative symlinks.
+ditto "$(dirname "$BIN")/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+
+# Shortcuts finds the Knock action through App Intents metadata. Xcode
+# extracts it when it builds an app; SwiftPM doesn't, so extract it here from
+# the constant values the compiler wrote.
+SCRATCH=$(mktemp -d)
+ls "$PWD"/Sources/Plinth/*.swift > "$SCRATCH/sources"
+find "$PWD/.build" -name '*.swiftconstvalues' -path '*/Release/*/arm64/*' > "$SCRATCH/constvalues"
+xcrun appintentsmetadataprocessor --quiet-warnings \
+  --output "$APP/Contents/Resources" --binary-file "$APP/Contents/MacOS/Plinth" \
+  --toolchain-dir "$(dirname "$(xcrun -f swiftc)")/../.." \
+  --sdk-root "$(xcrun --show-sdk-path --sdk macosx)" \
+  --xcode-version "$(xcodebuild -version | awk '/Build version/ { print $3 }')" \
+  --module-name Plinth --platform-family macOS --deployment-target 14.0 \
+  --target-triple arm64-apple-macos14.0 \
+  --source-file-list "$SCRATCH/sources" --swift-const-vals-list "$SCRATCH/constvalues" >/dev/null 2>&1
+test -f "$APP/Contents/Resources/Metadata.appintents/extract.actionsdata" ||
+  { echo "Couldn't extract the App Intents metadata for Shortcuts; it needs Xcode 16.3 or later" >&2; exit 1; }
 if [ -n "${PLINTH_VERSION:-}" ]; then
   plutil -replace CFBundleShortVersionString -string "$PLINTH_VERSION" "$APP/Contents/Info.plist"
 fi
@@ -34,14 +55,28 @@ for s in 16 32 128 256 512; do
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 
+# Sign from the inside out, never with --deep.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
 IDENTITY="${PLINTH_SIGN_IDENTITY:-}"
 if [ -n "$IDENTITY" ]; then
-  codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"
+  SIGN=(codesign --force --options runtime --timestamp --sign "$IDENTITY")
+  "${SIGN[@]}" "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
+  "${SIGN[@]}" --preserve-metadata=entitlements "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
+  "${SIGN[@]}" "$SPARKLE/Versions/B/Autoupdate"
+  "${SIGN[@]}" "$SPARKLE/Versions/B/Updater.app"
+  "${SIGN[@]}" "$SPARKLE"
+  "${SIGN[@]}" "$APP"
   SIGNER="$IDENTITY"
 else
+  # Updates come signed with our Developer ID, so a build of your own gets
+  # no feed and never offers to replace itself with ours. Ad hoc code also
+  # can't take the hardened runtime: library validation would refuse
+  # Sparkle, which has no team ID either.
+  plutil -remove SUFeedURL "$APP/Contents/Info.plist"
+  codesign --force --sign - "$SPARKLE"
   codesign --force --sign - "$APP"
   SIGNER="ad hoc"
 fi
-codesign --verify --strict "$APP"
+codesign --verify --deep --strict "$APP"
 VERSION=$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")
 echo "Built $APP $VERSION, signed $SIGNER"

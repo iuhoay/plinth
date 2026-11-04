@@ -31,6 +31,15 @@ struct FishView: View {
                     .onEnded { _ in PanelMover.end() })
                 .contextMenu { FishMenu() }
                 .help("Click to knock · Drag to move · Right-click for options")
+                // The censer stands left of the pedestal, on the same ground.
+                .overlay(alignment: .bottomLeading) {
+                    if let incense = fish.incense {
+                        IncenseView(incense: incense, side: side)
+                            .offset(y: -side * 0.035)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 1.2), value: fish.incense)
             caption
                 .frame(maxHeight: .infinity, alignment: .top)
                 .allowsHitTesting(false)
@@ -113,6 +122,15 @@ struct FishMenu: View {
             Text("Fast · every 0.5 s").tag(0.5)
         }
         Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
+        if fish.incense == nil {
+            Menu("Light Incense") {
+                ForEach([25, 45, 60], id: \.self) { minutes in
+                    Button("\(minutes) minutes") { fish.lightIncense(minutes: minutes) }
+                }
+            }
+        } else {
+            Button("Put Out the Incense") { fish.putOutIncense() }
+        }
         Picker("Placement", selection: $fish.placement) {
             ForEach(Placement.allCases) { Text($0.title).tag($0) }
         }
@@ -123,6 +141,11 @@ struct FishMenu: View {
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
         }
         Divider()
+        let updates = Updates.shared
+        if updates.available {
+            Button(updates.waiting ? "Update Available…" : "Check for Updates…") { updates.check() }
+                .disabled(!updates.canCheck)
+        }
         Button("Settings…") {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()

@@ -2,6 +2,8 @@
 
 Plinth ships as a disk image signed with a Developer ID certificate and notarized by Apple, so it opens on any Mac without Gatekeeper warnings.
 
+Plinth updates itself with [Sparkle](https://sparkle-project.org). Once a day it reads `appcast.xml` from the latest GitHub release, at `https://github.com/rubycatco/plinth/releases/latest/download/appcast.xml`, and offers the disk image the feed points to. The feed carries an EdDSA signature of that image, made with the key under [Update signing key](#update-signing-key), and the app installs only an image that matches. **Every release must include `appcast.xml`.** A release without one leaves every installed copy unable to find updates until a release with a feed is published.
+
 ## Cut a release
 
 Tag the commit on `main` and push the tag:
@@ -13,7 +15,7 @@ git push origin v1.2.0
 
 What happens next depends on whether the repository has the signing secrets listed under [One-time setup](#one-time-setup). `gh secret list` shows them.
 
-- **With the secrets**, the [Release workflow](../.github/workflows/release.yml) builds `Plinth-1.2.0.dmg` (the tag sets the version), signs and notarizes it, staples the ticket, and publishes it as a GitHub release with generated notes.
+- **With the secrets**, the [Release workflow](../.github/workflows/release.yml) builds `Plinth-1.2.0.dmg` (the tag sets the version), signs and notarizes it, staples the ticket, writes the update feed, and publishes both as a GitHub release with generated notes.
 - **Without them**, the workflow builds an ad hoc signed image, keeps it in the run's artifacts, and publishes nothing. The run still succeeds, with a warning. Build the signed image on your Mac and publish it by hand, as below.
 
 Running the workflow by hand from the Actions tab only builds the disk image and keeps it in the run's artifacts.
@@ -33,12 +35,20 @@ PLINTH_NOTARY_PROFILE=plinth-notary \
 
 Set `PLINTH_VERSION` and `PLINTH_BUILD` as shown. Without them the app keeps the version in `App/Info.plist`, and the image is named after it. `PLINTH_BUILD` matches what the workflow uses: the number of commits up to the tag.
 
-Check the image, then publish it with your notes and its SHA-256:
+Write the update feed for it. The optional Markdown file is shown in the app's update window, so keep it to what changed, without install steps:
+
+```sh
+./scripts/make_appcast.sh build/Plinth-1.2.0.dmg whats-new.md
+```
+
+The script signs the image with the key in your keychain. The first time, macOS asks whether `generate_appcast` may use the key; choose Always Allow. Don't rebuild or re-sign the image after this: the feed holds its signature.
+
+Check the image, then publish it and the feed with your notes and the image's SHA-256:
 
 ```sh
 spctl -a -vv -t open --context context:primary-signature build/Plinth-1.2.0.dmg
 shasum -a 256 build/Plinth-1.2.0.dmg
-gh release create v1.2.0 build/Plinth-1.2.0.dmg --title "Plinth 1.2.0" --notes-file notes.md
+gh release create v1.2.0 build/Plinth-1.2.0.dmg build/appcast.xml --title "Plinth 1.2.0" --notes-file notes.md
 ```
 
 Earlier releases have notes in English and Simplified Chinese, with install steps and the image's SHA-256. Use them as a template.
@@ -61,6 +71,30 @@ This needs a paid Apple Developer Program membership.
    ```
 
    Then delete the exported `.p12`.
+5. **Update signing key** for the workflow, from [Update signing key](#update-signing-key):
+
+   ```sh
+   gh secret set SPARKLE_ED_PRIVATE_KEY < plinth-update-key.txt
+   ```
+
+   Without it the workflow publishes nothing, even with the other secrets, since a release without a feed would stop updates.
+
+## Update signing key
+
+The key that signs updates lives in the login keychain of the Mac that made it, under the account `plinth`. Its public half is `SUPublicEDKey` in [`App/Info.plist`](../App/Info.plist). Sparkle's tools come with the package:
+
+```sh
+swift package resolve
+.build/artifacts/sparkle/Sparkle/bin/generate_keys --account plinth -p   # print the public key
+```
+
+**Back it up.** Without it, the only way to ship an update that installed copies accept is Sparkle's [key rotation](https://sparkle-project.org/documentation/#rotating-signing-keys): a release signed with the same Developer ID certificate that carries a new public key. Lose the certificate as well and every user has to download the next version by hand. Export the key, keep the file in a password manager, and delete it:
+
+```sh
+.build/artifacts/sparkle/Sparkle/bin/generate_keys --account plinth -x plinth-update-key.txt
+```
+
+On another Mac, `generate_keys --account plinth -f plinth-update-key.txt` imports it. Never commit it. If it leaks, rotate it the same way.
 
 ## Building a signed image locally
 

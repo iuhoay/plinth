@@ -66,6 +66,9 @@ final class Fish {
     private(set) var bloom = 1.0
     private(set) var notice: Quote?
     private var autoRound = 0
+    /// The stick of incense burning beside the fish, if one is lit.
+    private(set) var incense: Incense?
+    @ObservationIgnored private var incenseTask: Task<Void, Never>?
 
     var autoKnock: Bool {
         didSet { defaults.set(autoKnock, forKey: "autoKnock"); autoRound = 0; restartAuto() }
@@ -267,6 +270,33 @@ final class Fish {
             try? await Task.sleep(for: .seconds(seconds))
             if notice == quote { notice = nil }
         }
+    }
+
+    /// Light a stick of incense: one knock as it is lit, quiet while it burns,
+    /// three knocks as it goes out. Nothing is counted or kept.
+    func lightIncense(minutes: Int) {
+        incenseTask?.cancel()
+        let stick = Incense(lit: .now, duration: Double(minutes) * 60)
+        incense = stick
+        knock(byHand: false)
+        incenseTask = Task { [weak self] in
+            // The continuous clock keeps burning while the Mac sleeps.
+            try? await Task.sleep(for: .seconds(stick.duration))
+            guard let self, !Task.isCancelled else { return }
+            incense = nil
+            for i in 0..<3 {
+                if i > 0 { try? await Task.sleep(for: .seconds(1.6)) }
+                // A new stick lit between the knocks ends this one's.
+                guard !Task.isCancelled else { return }
+                knock(byHand: false)
+            }
+        }
+    }
+
+    /// Put the incense out early, without a knock.
+    func putOutIncense() {
+        incenseTask?.cancel()
+        incense = nil
     }
 
     private func watchTyping() {

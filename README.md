@@ -25,9 +25,11 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 - **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the more it rings.
 - **Auto-knock.** Let it keep a steady rhythm (every 0.4 to 4 seconds), with an option to stop after 108 knocks, one full turn of a mala.
+- **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock as it's lit, quiet while it burns down beside the fish, three knocks as it goes out. No clock, no count.
 - **Knock as you type.** Optional: each key you press, in any app, knocks once. Pause to think, and the next key rings. It needs no special permission: Plinth only notices *when* a key goes down, never which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
 - **Stays out of the way.** No Dock icon. Float it above your windows or sink it onto the desktop. Drag it anywhere.
+- **Keeps itself current.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
 - **Skins.** Twelve ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a singing bowl, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, and a CRT terminal. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. Or swap in anything: a folder of sprite frames, or a single image.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
@@ -40,7 +42,7 @@ Plinth runs on macOS 14 Sonoma or later, on Apple silicon and Intel.
 2. Open it and drag Plinth into Applications.
 3. If an older Plinth is running, quit it first: right-click the fish and choose **Quit Plinth**.
 
-Releases are signed with a Developer ID and notarized by Apple, so Plinth opens without a Gatekeeper warning. To build it yourself instead, see [Building from source](#building-from-source).
+Releases are signed with a Developer ID and notarized by Apple, so Plinth opens without a Gatekeeper warning. From 1.4.0 on, Plinth updates itself. To build it yourself instead, see [Building from source](#building-from-source).
 
 ## Usage
 
@@ -51,8 +53,10 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Knock | Knocks once. |
 | Auto-Knock | Knocks on its own, at the **Pace** you pick: every 2, 1, or 0.5 seconds. |
 | Knock as You Type | Knocks once for each key you press, in any app. |
+| Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
 | Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
 | Skin | Picks a skin, adds your own, or opens the skins folder. |
+| Check for Updates… | Asks GitHub for a newer Plinth now. It reads **Update Available…** when one is waiting. |
 | Settings… | Opens Settings. |
 | Quit Plinth | Quits. |
 
@@ -60,13 +64,21 @@ Settings has three tabs:
 
 | Tab | Settings |
 | --- | --- |
-| Knocking | Volume; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. |
+| Knocking | Volume; knock as you type; quiet while a microphone is in use; auto-knock at any interval from 0.4 to 4 seconds, optionally stopping after 108 knocks. Under Display: the fish's size (Small, Medium, or Large: 150, 210, or 300 points), its placement, and whether Plinth opens when you log in. Under Updates: whether to check for updates once a day. |
 | Skins | Every skin as a picture to choose from, and buttons to add your own or open the skins folder. |
 | Why a Fish | The line from the old monastic rules on why the block is a fish. |
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
 
-In a call, the knocks you didn't make yourself go quiet. While another app listens to a microphone, typed knocks and auto-knocks still swing the mallet but make no sound; a knock by hand still sounds. Plinth asks macOS which apps are reading a microphone and never opens one itself, so this needs no microphone permission. It is on by default, and needs macOS 14.2 or later; on earlier versions the setting doesn't appear.
+Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front), so the fish can tell you when a long build, a test run, or a coding agent is done:
+
+```sh
+make test; open -g plinth://knock
+```
+
+In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
+
+In a call, only a knock by hand sounds. While another app listens to a microphone, typed knocks, auto-knocks, the incense, and knocks from scripts and Shortcuts still swing the mallet but make no sound. Plinth asks macOS which apps are reading a microphone and never opens one itself, so this needs no microphone permission. It is on by default, and needs macOS 14.2 or later; on earlier versions the setting doesn't appear.
 
 ## Skins
 
@@ -89,7 +101,7 @@ The interface strings live in [`App/Resources/zh-Hans.lproj`](App/Resources/zh-H
 
 ## Building from source
 
-You need macOS 14 or later and Xcode 15 or later.
+You need macOS 14 or later and Xcode 16.3 or later.
 
 ```sh
 git clone https://github.com/rubycatco/plinth.git
@@ -98,7 +110,7 @@ cd plinth
 open build/Plinth.app
 ```
 
-The script builds a universal binary (Apple silicon and Intel), assembles `build/Plinth.app`, and signs it ad hoc. To keep it, drag `build/Plinth.app` into `/Applications`. `./scripts/make_dmg.sh` packages it as a disk image; [docs/RELEASING.md](docs/RELEASING.md) covers signing, notarization, and releases.
+The script builds a universal binary (Apple silicon and Intel), assembles `build/Plinth.app`, and signs it ad hoc. A build of your own doesn't update itself. To keep it, drag `build/Plinth.app` into `/Applications`. `./scripts/make_dmg.sh` packages it as a disk image; [docs/RELEASING.md](docs/RELEASING.md) covers signing, notarization, and releases.
 
 For a quick run during development, `swift run` works too, but the fish won't find its images outside the app bundle, so use the script to see the real thing.
 
@@ -107,7 +119,7 @@ For a quick run during development, `swift run` works too, but the fish won't fi
 ```
 Sources/Plinth/     SwiftUI + AppKit source; KnockSynth.swift synthesizes the knocks
 App/                Info.plist, app icon, and bundled resources (skins, mallet, burst, strings)
-scripts/            build and disk-image scripts
+scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
 tools/              skin impact drawings (Python: NumPy, Pillow)
