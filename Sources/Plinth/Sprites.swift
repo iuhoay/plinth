@@ -143,8 +143,9 @@ extension NSImage {
 
 /// A skin to choose: one that ships with the app, or one in the skins folder.
 struct SkinOption: Identifiable {
-    /// "" for the ink fish, the default; "builtin/<folder>" for the others
-    /// that ship with the app; or the file name in the skins folder.
+    /// "" for the wooden fish, "builtin/<folder>" for the others that ship
+    /// with the app, or the file name in the skins folder. The wooden fish
+    /// keeps the "" it had as the default, so a choice of it still holds.
     let id: String
     let title: String
     let pack: SkinPack
@@ -162,12 +163,12 @@ struct SkinOption: Identifiable {
             .sorted { ($0 == defaultFolder ? 0 : 1, $0) < ($1 == defaultFolder ? 0 : 1, $1) }
         return names.compactMap { name in
             guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
-            return SkinOption(id: name == defaultFolder ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
+            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
         }
     }()
 
-    static let inkFish = builtIn.first
-        ?? SkinOption(id: "", title: title(defaultFolder, "Ink Fish"), pack: SkinPack(idle: NSImage()))
+    static let inkFish = builtIn.first { $0.id == "builtin/\(defaultFolder)" }
+        ?? SkinOption(id: "builtin/\(defaultFolder)", title: title(defaultFolder, "Ink Fish"), pack: SkinPack(idle: NSImage()))
 
     private static func title(_ folder: String, _ english: String) -> String {
         Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")

@@ -205,7 +205,7 @@ final class Fish {
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
-    /// The worn skin's `SkinOption.id`: "" for the ink fish.
+    /// The worn skin's `SkinOption.id`: "" for the wooden fish.
     var skin: String {
         didSet {
             defaults.set(skin, forKey: "skin")
@@ -268,9 +268,8 @@ final class Fish {
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        // The ink fish was "builtin/ink-fish" before it became the default.
-        let saved = d.string(forKey: "skin") ?? ""
-        skin = saved == "builtin/ink-fish" ? "" : saved
+        // A skin is stored only once one is chosen; until then, the ink fish.
+        skin = d.string(forKey: "skin") ?? SkinOption.inkFish.id
         refreshSkins()
         loadSkin()
         watchSkins()
@@ -548,7 +547,7 @@ final class Fish {
             try? await Task.sleep(for: .seconds(0.5))
             guard !Task.isCancelled else { return }
             refreshSkins()
-            if !allSkins.contains(where: { $0.id == skin }) { skin = "" } else { loadSkin() }
+            if !allSkins.contains(where: { $0.id == skin }) { skin = SkinOption.inkFish.id } else { loadSkin() }
         }
     }
 
