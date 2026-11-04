@@ -48,6 +48,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { self?.placeSound() }
         }
         layoutPanel()
+        keepOnScreen(animated: false)
+        // A fish let go mostly past a screen's edge slides back into view, and
+        // one left on a display that is gone comes to one that is there.
+        PanelMover.onDrop = { [weak self] in self?.keepOnScreen(animated: true) }
+        NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.keepOnScreen(animated: false) }
+        }
         panel.orderFrontRegardless()
         placeSound()
         Updates.shared.start()
@@ -71,6 +79,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func panelSize() -> NSSize {
         let side = Fish.shared.size.side
         return NSSize(width: max(side, 250), height: side + 64)
+    }
+
+    /// The part of the panel the fish itself fills: its top square, under
+    /// which the caption hangs.
+    private func fishFrame(_ frame: NSRect) -> NSRect {
+        let side = Fish.shared.size.side
+        return NSRect(x: frame.midX - side / 2, y: frame.maxY - side, width: side, height: side)
+    }
+
+    /// Keep at least a third of the fish on some screen. Past that, bring it
+    /// just inside the nearest screen's visible area.
+    private func keepOnScreen(animated: Bool) {
+        let fish = fishFrame(panel.frame)
+        let screens = NSScreen.screens
+        let shown = screens.map { $0.frame.intersection(fish) }.map { $0.isNull ? 0 : $0.width * $0.height }.max() ?? 0
+        guard shown < fish.width * fish.height / 3 else { return }
+        let nearest = screens.min { a, b in
+            hypot(a.visibleFrame.midX - fish.midX, a.visibleFrame.midY - fish.midY)
+                < hypot(b.visibleFrame.midX - fish.midX, b.visibleFrame.midY - fish.midY)
+        }
+        guard let area = nearest?.visibleFrame else { return }
+        let x = min(max(fish.minX, area.minX), area.maxX - fish.width)
+        let y = min(max(fish.minY, area.minY), area.maxY - fish.height)
+        var frame = panel.frame
+        frame.origin.x += x - fish.minX
+        frame.origin.y += y - fish.minY
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(frame, display: true)
+            }
+        } else {
+            panel.setFrame(frame, display: true)
+        }
     }
 
     /// Size the panel for the fish and keep its bottom centre where it was.

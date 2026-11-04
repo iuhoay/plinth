@@ -121,6 +121,26 @@ extension NSImage {
     }
 }
 
+extension NSImage {
+    private static var thumbnailsKey: UInt8 = 0
+
+    /// The figure alone, without the empty air its frame keeps for the
+    /// mallet, so a tile or menu item shows the skin rather than space. Kept,
+    /// as finding the figure reads every pixel. Kept on the source image
+    /// itself, so it goes when the skins are read afresh and the old images do.
+    func thumbnail(side: CGFloat) -> NSImage {
+        var made = objc_getAssociatedObject(self, &Self.thumbnailsKey) as? [CGFloat: NSImage] ?? [:]
+        if let done = made[side] { return done }
+        let thumbnail = menuBarIcon(side: side)
+        // An image that could not be cropped comes back as itself; holding it would keep it forever.
+        if thumbnail !== self {
+            made[side] = thumbnail
+            objc_setAssociatedObject(self, &Self.thumbnailsKey, made, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        return thumbnail
+    }
+}
+
 /// A skin to choose: one that ships with the app, or one in the skins folder.
 struct SkinOption: Identifiable {
     /// "" for the wooden fish, "builtin/<folder>" for the others that ship
@@ -176,6 +196,7 @@ struct SpriteFish: View {
     /// The sequence playing, blink or hit; a new serial plays it again.
     @State private var cue = Cue()
     @State private var lastHit = -Double.infinity
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private struct Cue: Equatable {
         var hit = false
@@ -200,7 +221,7 @@ struct SpriteFish: View {
                 }
                 // Without a hit frame the figure gives a little under the
                 // mallet, like wood, and springs back.
-                .keyframeAnimator(initialValue: 0.0, trigger: fish.impacts) { [gives = pack.hit.isEmpty ? 1.0 : 0.0] content, give in
+                .keyframeAnimator(initialValue: 0.0, trigger: fish.impacts) { [gives = pack.hit.isEmpty && !reduceMotion ? 1.0 : 0.0] content, give in
                     content.scaleEffect(x: 1 + 0.008 * give * gives, y: 1 - 0.02 * give * gives, anchor: .bottom)
                 } keyframes: { _ in
                     KeyframeTrack {
@@ -236,22 +257,30 @@ struct SpriteFish: View {
         let a = Sprite.strikeDegrees * .pi / 180
         let grip = CGPoint(x: pack.strike.x * side + reach * cos(a), y: pack.strike.y * side - reach * sin(a))
         let hit = -Sprite.strikeDegrees, rest = hit + pack.raise
+        let swing = fish.swing
         // A typed key goes straight down, with no lift, to land with the key.
-        let quick = fish.quickStrike
+        let quick = swing.quick
+        // With Reduce Motion the mallet settles back without bouncing.
+        let rebound: Spring = reduceMotion ? .smooth : .bouncy
         return Image(nsImage: pack.mallet ?? Sprite.mallet)
             .resizable()
             .frame(width: size, height: size)
-            .keyframeAnimator(initialValue: rest, trigger: fish.strikes) { content, angle in
+            .keyframeAnimator(initialValue: rest, trigger: swing) { content, angle in
                 content.rotationEffect(.degrees(angle), anchor: Sprite.malletGrip)
             } keyframes: { _ in
                 KeyframeTrack {
-                    // A small lift that eases to a stop, the swing that
-                    // gathers speed into the wood, then the rebound.
-                    LinearKeyframe(quick ? hit : rest + 7, duration: quick ? Fish.quickImpactDelay / 2 : Fish.liftDuration,
-                                   timingCurve: .easeOut)
-                    LinearKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - Fish.liftDuration,
-                                   timingCurve: .easeIn)
-                    SpringKeyframe(rest, duration: 0.5, spring: .bouncy)
+                    if swing.calledOff {
+                        // Pulled back mid-swing: up to rest, without a sound.
+                        SpringKeyframe(rest, duration: 0.35, spring: .smooth)
+                    } else {
+                        // A small lift that eases to a stop, the swing that
+                        // gathers speed into the wood, then the rebound.
+                        LinearKeyframe(quick ? hit : rest + 7, duration: quick ? Fish.quickImpactDelay / 2 : Fish.liftDuration,
+                                       timingCurve: .easeOut)
+                        LinearKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - Fish.liftDuration,
+                                       timingCurve: .easeIn)
+                        SpringKeyframe(rest, duration: 0.5, spring: rebound)
+                    }
                 }
             }
             .position(x: grip.x + (0.5 - Sprite.malletGrip.x) * size,

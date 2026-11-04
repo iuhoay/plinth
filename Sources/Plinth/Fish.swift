@@ -74,6 +74,14 @@ enum Rhythm: String, CaseIterable, Identifiable {
     }
 }
 
+/// One swing of the mallet. `quick` is the short swing for a typed key;
+/// `calledOff` takes a swing still in the air back up without landing.
+struct Swing: Equatable {
+    var serial = 0
+    var quick = false
+    var calledOff = false
+}
+
 @MainActor @Observable
 final class Fish {
     static let shared = Fish()
@@ -98,9 +106,12 @@ final class Fish {
     /// When the mallet last met the wood, on the system uptime clock.
     @ObservationIgnored private var lastImpact = -Double.infinity
 
-    private(set) var strikes = 0
-    /// Whether the latest swing is a quick one, for a typed key.
-    private(set) var quickStrike = false
+    /// The mallet's latest swing; each new one swings it again.
+    private(set) var swing = Swing()
+    /// A swing by hand still in the air, until the mallet lands.
+    @ObservationIgnored private var handSwing: (serial: Int, task: Task<Void, Never>)?
+    /// A knock to sound once the room being rendered is ready, to hear it.
+    @ObservationIgnored private var previewAfterSpace = false
     /// Counts the moments the mallet meets the figure. Nothing else is
     /// counted: knocking earns no merit.
     private(set) var impacts = 0
@@ -140,6 +151,11 @@ final class Fish {
                 try? await Task.sleep(for: .seconds(0.25))
                 guard !Task.isCancelled else { return }
                 sound.use(voice: pack.voice, space: Float(space))
+                spaceChange = nil
+                if previewAfterSpace {
+                    previewAfterSpace = false
+                    preview()
+                }
             }
         }
     }
@@ -230,31 +246,65 @@ final class Fish {
     /// Knock once. Auto-knock and typing pass `byHand: false`: only a knock on
     /// the fish itself is ever answered. `quick` is the short swing for typing.
     /// `at` is where a click landed across the fish, from 0 at its left edge
-    /// to 1 at its right.
-    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil) {
-        quickStrike = quick
-        strikes += 1
+    /// to 1 at its right. A `preview`, to hear a setting, always sounds and is
+    /// never answered.
+    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false) {
+        swing = Swing(serial: swing.serial + 1, quick: quick)
+        let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
-        let (force, place) = touch(byHand: byHand, quick: quick, at: x,
-                                   silence: ProcessInfo.processInfo.systemUptime + delay - lastImpact)
-        // The knock is made while the mallet is in the air.
-        let knock = sound.synthesize(force: force, place: place)
-        Task {
-            try? await Task.sleep(for: .seconds(delay))
+        let audible = volume > 0 && (byHand || preview || !quietWhileMicInUse || !Microphone.inUseByOthers())
+        // Wake the audio while the mallet is in the air, so the first knock
+        // after a quiet lands with the mallet rather than a moment after it.
+        if audible { sound.warm(for: delay) }
+        // A press is read a moment into the swing, once a Force Touch trackpad
+        // has felt how firm it is. A typed key has no time to spare.
+        let feel = quick ? 0 : Self.liftDuration
+        let swingTask = Task {
+            try? await Task.sleep(for: .seconds(feel))
+            guard !Task.isCancelled else { return }
+            let deep = (press?.stage ?? 0) >= 2
+            let (force, place) = touch(byHand: byHand, quick: quick, at: x,
+                                       silence: ProcessInfo.processInfo.systemUptime + delay - feel - lastImpact)
+            // The knock is made while the mallet is in the air.
+            let knock = sound.synthesize(force: force, place: place)
+            try? await Task.sleep(for: .seconds(delay - feel))
+            guard !Task.isCancelled else { return }
+            if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
             let now = ProcessInfo.processInfo.systemUptime
             bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
-            if byHand || !quietWhileMicInUse || !Microphone.inUseByOthers() {
+            if audible {
                 sound.play(samples, volume: Float(volume), bloom: Float(bloom))
             }
-            if byHand {
-                // A Force Touch trackpad taps back as the mallet lands. macOS
-                // plays it only while a finger rests on the trackpad.
-                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+            if byHand && !preview {
+                // A Force Touch trackpad taps back as the mallet lands, harder
+                // for a deep press. macOS plays it only while a finger rests
+                // on the trackpad, as it still does when the knock is pressed.
+                NSHapticFeedbackManager.defaultPerformer.perform(deep ? .levelChange : .generic,
+                                                                 performanceTime: .now)
                 speak()
             }
+        }
+        if byHand && !preview { handSwing = (serial, swingTask) }
+    }
+
+    /// The fish is being moved, not knocked: a swing by hand still in the air
+    /// goes back up without landing.
+    func callOff() {
+        guard let handSwing else { return }
+        handSwing.task.cancel()
+        self.handSwing = nil
+        swing = Swing(serial: swing.serial + 1, calledOff: true)
+    }
+
+    /// One knock to hear a setting just changed: the volume, the room, or a skin.
+    func preview() {
+        if spaceChange != nil {
+            previewAfterSpace = true
+        } else {
+            knock(byHand: false, preview: true)
         }
     }
 
@@ -616,15 +666,26 @@ final class KnockSound {
         }
     }
 
+    /// Start the engine, if it is paused, for a knock due in `seconds`.
+    /// Starting it takes a moment, best spent while the mallet is in the air.
+    func warm(for seconds: Double) {
+        guard start() else { return }
+        ringsUntil = max(ringsUntil, ProcessInfo.processInfo.systemUptime + seconds)
+        pauseWhenQuiet()
+    }
+
+    private func start() -> Bool {
+        if engine.isRunning { return true }
+        route()
+        do { try engine.start() } catch { return false }
+        return true
+    }
+
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
     /// a rushed knock is also a little quieter. Even a rushed knock sends a
     /// little to the hall, so a run of them builds up in the room together.
     func play(_ knock: [Float], volume: Float, bloom: Float) {
-        guard knock.count > 1 else { return }
-        if !engine.isRunning {
-            route()
-            do { try engine.start() } catch { return }
-        }
+        guard knock.count > 1, volume > 0, start() else { return }
         let gain = volume * .random(in: 0.92...1.0)
         mix.add(knock, dry: gain * (0.8 + 0.2 * bloom), send: gain * (0.25 + 0.75 * bloom))
         let now = ProcessInfo.processInfo.systemUptime
