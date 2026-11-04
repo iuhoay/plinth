@@ -105,7 +105,7 @@ jobs:
 
       - name: Explain the missing release
         if: startsWith(github.ref, 'refs/tags/v') && env.CAN_SIGN != 'true'
-        run: echo "::warning::No signing secrets, so no release was published. The ad hoc signed disk image is in this run's artifacts."
+        run: echo "::warning::Signing or update-key secrets are missing, so no release was published. The ad hoc signed disk image is in this run's artifacts."
 
       - name: Clean up
         if: always()

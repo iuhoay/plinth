@@ -14,11 +14,10 @@ final class Updates: NSObject {
     /// menu item says so until the user looks at it.
     private(set) var waiting = false
     private(set) var canCheck = false
+    /// Whether this build can update itself at all.
+    private(set) var available = false
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
     @ObservationIgnored private var canCheckObservation: NSKeyValueObservation?
-
-    /// Whether this build can update itself at all.
-    var available: Bool { controller != nil }
 
     /// Ask GitHub once a day whether there is a newer Plinth.
     var checksAutomatically: Bool {
@@ -37,6 +36,7 @@ final class Updates: NSObject {
         guard controller == nil, Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil else { return }
         let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
         self.controller = controller
+        available = true
         canCheckObservation = controller.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
             MainActor.assumeIsolated { self?.canCheck = updater.canCheckForUpdates }
         }
