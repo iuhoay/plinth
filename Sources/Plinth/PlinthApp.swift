@@ -19,6 +19,9 @@ struct PlinthApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NSPanel!
+    /// A `plinth://knock` or `plinth://call` that launched Plinth comes before
+    /// the fish is on screen. It waits for the fish, so the mallet is seen to fall.
+    private var atLaunch: [() -> Void] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let fish = Fish.shared
@@ -59,6 +62,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
         placeSound()
         Updates.shared.start()
+        if !atLaunch.isEmpty {
+            let waiting = atLaunch
+            atLaunch = []
+            DispatchQueue.main.async { waiting.forEach { $0() } }
+        }
     }
 
     private func placeSound() {
@@ -67,13 +75,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           (panel.frame.midY - screen.frame.minY) / screen.frame.height)
     }
 
-    /// `plinth://knock` knocks once, so scripts and other apps can knock.
+    /// `plinth://knock` knocks once, so scripts and other apps can knock, and
+    /// `plinth://call` calls you back, as when a coding agent is done.
     /// Files opened with Plinth, such as `.plinthskin`, are installed as skins.
     func application(_ application: NSApplication, open urls: [URL]) {
         Fish.shared.install(urls.filter(\.isFileURL))
-        for url in urls where url.scheme == "plinth" && url.host() == "knock" {
-            Fish.shared.knock(byHand: false)
+        for url in urls where url.scheme == "plinth" {
+            switch url.host() {
+            case "knock": whenOnScreen { Fish.shared.knock(byHand: false) }
+            case "call": whenOnScreen { Fish.shared.call() }
+            default: break
+            }
         }
+    }
+
+    private func whenOnScreen(_ action: @escaping () -> Void) {
+        if panel == nil { atLaunch.append(action) } else { action() }
     }
 
     private func panelSize() -> NSSize {

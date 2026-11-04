@@ -70,11 +70,42 @@ Settings has three tabs:
 
 To knock as you type, Plinth asks macOS how long ago a key last went down, the same counter that idle timers use. It never learns which key, so it needs no Accessibility or Input Monitoring permission.
 
-Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front), so the fish can tell you when a long build, a test run, or a coding agent is done:
+Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g` keeps the app you're in at the front). `open -g plinth://call` calls you back, so the fish can tell you when a long build or a test run is done:
 
 ```sh
-make test; open -g plinth://knock
+make test; open -g plinth://call
 ```
+
+A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early.
+
+A coding agent can call you when it can't go on without you. In Claude Code, add this hook to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish calls you when Claude stops to ask your permission. It doesn't call at the end of every reply, since you are often there to read it:
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [{ "type": "command", "command": "open -g plinth://call" }]
+      }
+    ]
+  }
+}
+```
+
+In Codex, add this to `~/.codex/hooks.json`, then trust it once under `/hooks`. The fish calls you when Codex asks for approval:
+
+```json
+{
+  "hooks": {
+    "PermissionRequest": [
+      { "hooks": [{ "type": "command", "command": "open -g plinth://call" }] }
+    ]
+  }
+}
+```
+
+If Plinth isn't running, either URL opens it, and the fish knocks once it is on screen.
 
 In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed release; in a build of your own, use the URL. Like auto-knock, these knocks are never answered.
 
