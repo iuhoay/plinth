@@ -80,6 +80,7 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
 | `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
+| `raise` | number | `25` | How many degrees above its landing angle the mallet rests. Raise it for a figure struck on its face under a crossbar, so the mallet rests clear of the frame; the built-in hanging skins use `45`. |
 
 All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch:
 
@@ -87,6 +88,7 @@ All keys are optional. Plinth ignores keys it doesn't know. A few rules to watch
 - A `strike` that doesn't hold exactly two numbers falls back to `[0.6, 0.3]`; `name` and `voice` still apply.
 - An unknown `voice`, including one in the wrong case such as `"Jade"`, plays the wooden knock.
 - A `glow` that isn't `#` and six hex digits is ignored, and the censer stays unlit.
+- A `raise` is kept between 0 and 80.
 
 ### Voices
 
@@ -129,7 +131,7 @@ Without `mallet.png`, a skin uses the shared [`App/Resources/mallet.png`](../App
 | Head centre | (0.169, 0.505) of the mallet image. This point lands on `strike`. |
 | Grip | (0.964, 0.505) of the mallet image. The mallet rotates around this point. |
 
-At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°. A knock from typing skips the small lift before the swing.
+At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°, or `raise` degrees when `skin.json` sets it. A knock from typing skips the small lift before the swing.
 
 ## The burst
 
