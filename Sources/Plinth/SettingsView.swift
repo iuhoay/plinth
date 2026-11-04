@@ -139,7 +139,7 @@ private struct SkinSettings: View {
             } header: {
                 Text("Your Skins")
             } footer: {
-                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one.")
+                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, crt, bead, plate, porcelain, bell, stamp, chime, board, or ceramic. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one.")
                     .settingsFootnote()
             }
         }
