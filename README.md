@@ -55,7 +55,7 @@ Click the fish to knock, and drag it to move it. Right-click the fish, or click 
 | Knock as You Type | Knocks once for each key you press, in any app. |
 | Light Incense | Lights a stick for 25, 45, or 60 minutes: one knock now, three when it burns out. While it burns, **Put Out the Incense** ends it early, without a knock. |
 | Placement | **Above windows** floats the fish over other apps; **On the desktop** keeps it under them. |
-| Skin | Picks a skin, adds your own, or opens the skins folder. |
+| Skin | Picks a skin, adds your own, opens the skins folder, or browses the community gallery. |
 | Check for Updates… | Asks GitHub for a newer Plinth now. It reads **Update Available…** when one is waiting. |
 | Settings… | Opens Settings. |
 | Quit Plinth | Quits. |
@@ -91,7 +91,7 @@ my-skin/
 └── skin.json   { "name": "My Skin", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. Plinth picks up changes while it runs.
+Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Skin → Add Skins…**. To share one, send it as a `.plinthskin` file: double-click one, or drop it on the fish, to install it. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Skin → Browse More Skins…**). Plinth picks up changes while it runs.
 
 The [skin format](docs/SKINS.md) has the full specification: every file and key, the twelve knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 

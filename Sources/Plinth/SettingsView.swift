@@ -128,16 +128,18 @@ private struct SkinSettings: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                 } else {
-                    grid(fish.skins)
+                    grid(fish.skins, exportable: true)
                 }
                 HStack {
                     Button("Add Skins…") { fish.addSkins() }
                     Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+                    Spacer()
+                    Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
                 }
             } header: {
                 Text("Your Skins")
             } footer: {
-                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too.")
+                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too, and so does a .plinthskin file, a skin folder zipped to share. Right-click a skin of your own to export one.")
                     .settingsFootnote()
             }
         }
@@ -145,10 +147,16 @@ private struct SkinSettings: View {
         .frame(height: 520)
     }
 
-    private func grid(_ options: [SkinOption]) -> some View {
+    private func grid(_ options: [SkinOption], exportable: Bool = false) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
             ForEach(options) { option in
                 SkinTile(option: option, selected: option.id == fish.skin) { fish.skin = option.id }
+                    .contextMenu {
+                        // A folder skin goes out as one .plinthskin file; a single image is shared as it is.
+                        if exportable, (try? Fish.skinsDirectory.appending(path: option.id).resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                            Button("Export as .plinthskin…") { fish.export(option) }
+                        }
+                    }
             }
         }
         .padding(.vertical, 4)

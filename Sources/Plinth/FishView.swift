@@ -30,6 +30,11 @@ struct FishView: View {
                     .onChanged { _ in PanelMover.drag() }
                     .onEnded { _ in PanelMover.end() })
                 .contextMenu { FishMenu() }
+                // Drop a .plinthskin, a skin folder or an image on the fish to wear it.
+                .dropDestination(for: URL.self) { urls, _ in
+                    fish.install(urls.filter(\.isFileURL))
+                    return true
+                }
                 .help("Click to knock · Drag to move · Right-click for options")
                 // The censer stands left of the pedestal, on the same ground.
                 .overlay(alignment: .bottomLeading) {
@@ -142,6 +147,7 @@ struct FishMenu: View {
             Divider()
             Button("Add Skins…") { fish.addSkins() }
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+            Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
         }
         Divider()
         let updates = Updates.shared
