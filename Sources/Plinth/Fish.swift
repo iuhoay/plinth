@@ -376,7 +376,7 @@ final class Fish {
     }
 
     /// The fish has a few things to say and says each of them once: the next
-    /// line, on the first knock by hand each day. After the last, it only knocks.
+    /// line, on the first knock by hand each day (from 4 a.m.). After the last, it only knocks.
     private func speak() {
         let said = defaults.integer(forKey: "said")
         let today = Self.today()
@@ -388,8 +388,11 @@ final class Fish {
         show(saying, for: min(14, max(7, Double(saying.text.count) * 0.4)))
     }
 
+    /// A temple's day begins when the board is struck to wake the hall, before
+    /// dawn, not at midnight: a knock at one in the morning is still last night.
     private static func today() -> String {
-        let day = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        let dawn = Calendar.current.date(byAdding: .hour, value: -4, to: .now) ?? .now
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: dawn)
         return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
     }
 
