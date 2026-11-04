@@ -78,6 +78,8 @@ make test; open -g plinth://call
 
 A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early.
 
+In the *Gateless Gate*, Master Ruiyan called to himself every day, 「主人公」 ("Master!"), and answered himself, 「诺」 ("Yes?"). Then: "Wide awake! Yes. Some other day, don't let anyone fool you! Yes, yes." The fish only calls; answering is up to you.
+
 A coding agent can call you when it can't go on without you. In Claude Code, add this hook to `~/.claude/settings.json` (into its `hooks`, if it has one already). The fish calls you when Claude stops to ask your permission. It doesn't call at the end of every reply, since you are often there to read it:
 
 ```json
