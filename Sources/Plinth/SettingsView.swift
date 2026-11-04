@@ -162,20 +162,143 @@ private struct SkinTile: View {
     }
 }
 
+/// A hanging scroll: the ink fish in an ensō on rice paper, and the rule
+/// that explains it written top to bottom, right to left, with its source
+/// and a seal. It stays paper in Dark Mode too; ink needs a light ground.
 private struct AboutSettings: View {
+    static let paper = Color(red: 0.953, green: 0.933, blue: 0.890)
+    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+    static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
+
+    private let inkFish = SkinOption.builtIn.first { $0.id == "builtin/ink-fish" } ?? .woodenFish
+
     var body: some View {
-        VStack(spacing: 16) {
-            Image(nsImage: SkinOption.woodenFish.pack.idle)
-                .resizable()
-                .frame(width: 120, height: 120)
-            QuoteView(quote: Zen.whyFish)
-                .frame(maxWidth: 380)
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
+                ZStack {
+                    Enso(color: Self.ink, opacity: 0.3)
+                        .frame(width: 200, height: 200)
+                    Image(nsImage: inkFish.pack.idle)
+                        .resizable()
+                        .frame(width: 176, height: 176)
+                        // The fish sits low in its sprite, under the mallet's arc.
+                        .offset(y: -24)
+                }
+                .padding(.top, 52)
+                .frame(maxWidth: .infinity)
+                HStack(alignment: .top, spacing: 18) {
+                    VStack(spacing: 14) {
+                        Column(text: Zen.whyFish.source.trimmingCharacters(in: CharacterSet(charactersIn: "《》")),
+                               size: 11, color: Self.ink.opacity(0.5))
+                        Seal(text: "常醒")
+                    }
+                    .padding(.top, 92)
+                    ForEach(Array(Self.columns(Zen.whyFish.text).enumerated().reversed()), id: \.offset) { _, line in
+                        Column(text: line, size: 19, color: Self.ink.opacity(0.88))
+                    }
+                }
+                .padding(.top, 40)
+                .padding(.trailing, 44)
+            }
+            Spacer(minLength: 24)
             Text("Knocking earns no merit.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, design: .serif))
+                .tracking(1.5)
+                .foregroundStyle(Self.ink.opacity(0.38))
+                .padding(.bottom, 22)
         }
-        .padding(28)
         .frame(maxWidth: .infinity)
+        .frame(height: 380)
+        .background(Self.paper)
+        .environment(\.colorScheme, .light)
+    }
+
+    /// One column per clause, without punctuation, as on a scroll.
+    private static func columns(_ text: String) -> [String] {
+        text.split(whereSeparator: { "，。、；：！？\n".contains($0) }).map(String.init)
+    }
+}
+
+/// Characters stacked top to bottom.
+private struct Column: View {
+    let text: String
+    let size: CGFloat
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: size * 0.32) {
+            ForEach(Array(text.enumerated()), id: \.offset) { _, character in
+                Text(String(character))
+            }
+        }
+        .font(.custom("Songti SC", size: size))
+        .foregroundStyle(color)
+    }
+}
+
+/// A small cinnabar seal, its characters carved out in white.
+private struct Seal: View {
+    let text: String
+
+    var body: some View {
+        VStack(spacing: 1) {
+            ForEach(Array(text.enumerated()), id: \.offset) { _, character in
+                Text(String(character))
+            }
+        }
+        .font(.custom("Songti SC", size: 10).weight(.bold))
+        .foregroundStyle(AboutSettings.paper)
+        .padding(.horizontal, 3)
+        .padding(.vertical, 4)
+        .background(AboutSettings.cinnabar, in: RoundedRectangle(cornerRadius: 2))
+        .opacity(0.9)
+    }
+}
+
+/// One brushstroke round, open where the brush lifted. The brush lands at the
+/// lower left, goes round clockwise, thins, and runs dry: its hairs part
+/// into streaks and give out one by one before the circle closes.
+private struct Enso: View {
+    let color: Color
+    let opacity: Double
+
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let radius = min(size.width, size.height) / 2
+            let thickest = radius * 0.15
+            /// A point on the stroke at t (0 where the brush lands, 1 where
+            /// the circle would close), `offset` out from its middle.
+            func point(_ t: Double, _ offset: Double) -> CGPoint {
+                let angle = 2.3 + 2 * Double.pi * 0.9 * t // radians, y down: from the lower left
+                let r = radius - thickest / 2 + radius * 0.012 * sin(t * 9 + 0.5) + offset
+                return CGPoint(x: center.x + r * cos(angle), y: center.y + r * sin(angle))
+            }
+            func width(_ t: Double) -> Double { thickest * pow(max(0, 1 - t), 1.1) }
+
+            // The body of the stroke, thinning as the ink runs out.
+            let wet = (0...180).map { 0.8 * Double($0) / 180 }
+            var body = Path()
+            body.addLines(wet.map { point($0, width($0) / 2) } + wet.reversed().map { point($0, -width($0) / 2) })
+            body.closeSubpath()
+            // Where the brush lands it presses down, a blunt drop along the stroke.
+            let landing = point(0.012, 0)
+            let along = atan2(point(0.03, 0).y - landing.y, point(0.03, 0).x - landing.x)
+            body.addPath(Path(ellipseIn: CGRect(x: -thickest * 0.75, y: -thickest * 0.6,
+                                                width: thickest * 1.5, height: thickest * 1.2)),
+                         transform: CGAffineTransform(translationX: landing.x, y: landing.y).rotated(by: along))
+            context.fill(body, with: .color(color))
+            // Then it runs dry: a few hairs carry on alone and give out one by one.
+            for (across, end) in [(-0.45, 0.86), (-0.2, 0.97), (0.05, 0.91), (0.3, 0.95), (0.48, 0.84)] {
+                var hair = Path()
+                hair.addLines((0...60).map { point(0.55 + (end - 0.55) * Double($0) / 60, across * width(0.55)) })
+                context.stroke(hair, with: .color(color),
+                               style: StrokeStyle(lineWidth: thickest * 0.09, lineCap: .round))
+            }
+        }
+        // Overlaps don't darken: the stroke is one wash of ink.
+        .compositingGroup()
+        .opacity(opacity)
     }
 }
 

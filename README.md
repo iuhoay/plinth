@@ -116,11 +116,11 @@ For a quick run during development, `swift run` works too, but the fish won't fi
 
 ```
 Sources/Plinth/     SwiftUI + AppKit source; KnockSynth.swift synthesizes the knocks
-App/                Info.plist, app icon, and bundled resources (skins, mallet, burst, strings)
+App/                Info.plist, app icon, disk image background, and bundled resources (skins, mallet, burst, strings)
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
-tools/              skin impact drawings (Python: NumPy, Pillow)
+tools/              skin impact and disk image drawings (Python: NumPy, Pillow)
 ```
 
 ## License

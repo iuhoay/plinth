@@ -30,16 +30,21 @@ IDENTITY="${PLINTH_SIGN_IDENTITY:-}"
 
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
-ditto "$APP" "$STAGE/Plinth.app"
-ln -s /Applications "$STAGE/Applications"
+# dmgbuild lays out the window (background, icon positions) by writing its
+# .DS_Store directly, so it needs no Finder or AppleScript, even on CI.
+python3 -m venv "$STAGE/venv"
+"$STAGE/venv/bin/pip" install --quiet --disable-pip-version-check "dmgbuild==1.6.7"
+# One TIFF holding the 1x and @2x backgrounds, so Retina screens get the sharp one.
+tiffutil -cathidpicheck App/DMGBackground.png App/DMGBackground@2x.png -out "$STAGE/background.tiff" 2>/dev/null
 rm -f "$DMG"
 # hdiutil now and then fails with "Resource busy", especially on CI.
 for attempt in 1 2 3; do
-  if hdiutil create -volname Plinth -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null; then
+  if "$STAGE/venv/bin/dmgbuild" -s scripts/dmg_settings.py -D app="$APP" -D background="$STAGE/background.tiff" \
+      Plinth "$DMG" >/dev/null; then
     break
   fi
   if [ "$attempt" = 3 ]; then
-    echo "error: hdiutil could not create $DMG" >&2
+    echo "error: dmgbuild could not create $DMG" >&2
     exit 1
   fi
   sleep 5
