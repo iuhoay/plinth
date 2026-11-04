@@ -113,7 +113,14 @@ def biquad(f0, q, band):
     return b, [1, -2 * cosw / a0, (1 - alpha) / a0]
 
 
-def strike(tone, base, seed):
+REF_FORCE = 0.6
+
+
+def strike(tone, base, seed, force=REF_FORCE, place=0.0):
+    """One strike, as KnockSynth.strike: force 0 to 1, place -1 to 1 off the sweet spot."""
+    hard = max(force, .05) / REF_FORCE
+    edge = min(abs(place), 1)
+    base = base * (1 + .004 * (force - REF_FORCE)) * (1 + .012 * edge)
     rng = Rng(seed)
     n = int(tone["length"] * SR)
     out = np.zeros(n)
@@ -124,8 +131,15 @@ def strike(tone, base, seed):
         decay = math.exp(-1 / (tau * SR))
         return amp * decay ** idx * np.sin(phase + dp * idx)
 
-    def add(ratio, amp, tau, cents, jitter):
+    def add(ratio, amp, tau, cents, jitter, body=False):
         nonlocal out
+        amp = amp * hard ** (.6 * math.log2(max(ratio, .25)))
+        if body:
+            amp *= 1 - .4 * edge
+        elif ratio == 1:
+            amp *= 1 - .3 * edge
+        elif ratio > 1:
+            amp *= 1 + .5 * edge
         f = base * ratio
         if jitter:
             f *= 1 + rng.gaussian() * 0.004
@@ -138,15 +152,16 @@ def strike(tone, base, seed):
         add(*m, jitter=True)
     if "body" in tone:
         r, a, t, _ = tone["body"]
-        add(r, a, t, 0, False)
+        add(r, a, t, 0, False, body=True)
     if "noise" in tone:
         amp, tau, lo, hi = tone["noise"]
+        amp, lo, hi = amp * hard ** 1.2, lo * hard ** .2, min(hi * hard ** .4, .45 * SR)
         decay = math.exp(-1 / (tau * SR))
         burst = np.array([rng.gaussian() for _ in range(n)]) * decay ** idx
         f0 = math.sqrt(lo * hi)
         b, a = biquad(f0, max(f0 / (hi - lo), .15), True)
         out += amp * lfilter(b, a, burst)
-    att = max(tone["attack"] * SR, 1)
+    att = max(tone["attack"] * (1 / hard) ** .7 * SR, 1)
     k = min(n, int(att))
     out[:k] *= np.arange(k) / att
     fade = min(n, int(.05 * SR))

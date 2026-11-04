@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import Observation
+import os
 import ServiceManagement
 import UniformTypeIdentifiers
 
@@ -205,21 +206,33 @@ final class Fish {
         restartAuto()
         typing.onPress = { [weak self] in self?.knock(byHand: false, quick: true) }
         watchTyping()
+        pressMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .pressure]) { [weak self] event in
+            self?.feel(event)
+            return event
+        }
     }
 
     /// Knock once. Auto-knock and typing pass `byHand: false`: only a knock on
     /// the fish itself is ever answered. `quick` is the short swing for typing.
-    func knock(byHand: Bool = true, quick: Bool = false) {
+    /// `at` is where a click landed across the fish, from 0 at its left edge
+    /// to 1 at its right.
+    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil) {
         quickStrike = quick
         strikes += 1
+        let delay = quick ? Self.quickImpactDelay : Self.impactDelay
+        let (force, place) = touch(byHand: byHand, quick: quick, at: x,
+                                   silence: ProcessInfo.processInfo.systemUptime + delay - lastImpact)
+        // The knock is made while the mallet is in the air.
+        let knock = sound.synthesize(force: force, place: place)
         Task {
-            try? await Task.sleep(for: .seconds(quick ? Self.quickImpactDelay : Self.impactDelay))
+            try? await Task.sleep(for: .seconds(delay))
+            let samples = await knock.value
             let now = ProcessInfo.processInfo.systemUptime
             bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
             if byHand || !quietWhileMicInUse || !Microphone.inUseByOthers() {
-                sound.play(volume: Float(volume), bloom: Float(bloom))
+                sound.play(samples, volume: Float(volume), bloom: Float(bloom))
             }
             if byHand {
                 // A Force Touch trackpad taps back as the mallet lands. macOS
@@ -230,10 +243,47 @@ final class Fish {
         }
     }
 
+    /// How hard and where a knock lands. A firm click lands harder and a deep
+    /// one hardest; a hand in a hurry lands lighter, and a typed key lighter
+    /// still. A click off the strike point lands toward the edge.
+    private func touch(byHand: Bool, quick: Bool, at x: Double?, silence: Double) -> (force: Float, place: Float) {
+        let rested = Float(Self.bloom(afterSilence: silence))
+        var force: Float
+        if quick {
+            force = 0.36 + 0.2 * rested + .random(in: -0.05...0.05)
+        } else if byHand, let press {
+            force = press.stage >= 2 ? 0.95 : 0.4 + 0.4 * press.pressure
+            force *= 0.85 + 0.15 * rested
+        } else {
+            force = (0.58 + .random(in: -0.07...0.07)) * (0.85 + 0.15 * rested)
+        }
+        press = nil
+        // A quarter of the fish's width off the strike point is the edge.
+        let place = x.map { Float(($0 - pack.strike.x) / 0.25) } ?? .random(in: -0.2...0.2)
+        return (min(max(force, 0.1), 1), min(max(place, -1), 1))
+    }
+
+    /// How firmly the latest click on the fish went down, from a Force Touch
+    /// trackpad: the stage-one pressure, 0 to 1, and stage 2 for a deep click.
+    /// Nil from a mouse.
+    @ObservationIgnored private var press: (pressure: Float, stage: Int)?
+    @ObservationIgnored private var pressMonitor: Any?
+
+    private func feel(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            press = nil
+        } else {
+            var p = press ?? (0, 0)
+            if event.stage == 1 { p.pressure = max(p.pressure, event.pressure) }
+            p.stage = max(p.stage, event.stage)
+            press = p
+        }
+    }
+
     /// Place the knock where the fish sits: `x` runs from 0 at the screen's
-    /// left edge to 1 at its right. Not all the way to one ear: it is beside you.
-    func heard(at x: Double) {
-        sound.pan = Float((min(max(x, 0), 1) * 2 - 1) * 0.5)
+    /// left edge to 1 at its right, `y` from 0 at the bottom to 1 at the top.
+    func heard(at x: Double, _ y: Double) {
+        sound.place(x: Float(x), y: Float(y))
     }
 
     /// The longer the quiet before a knock, the more fully it rings: none of
@@ -436,43 +486,65 @@ final class Fish {
     }
 }
 
-/// The worn skin's knock, synthesized, and its hall. A small pool of players
-/// lets fast knocks overlap instead of cutting off.
+/// The worn skin's knock and the room it rings in. Each knock is synthesized
+/// as the mallet falls, for how hard and where it lands. It comes from where
+/// the fish sits, placed around the listener, and on headphones it is rendered
+/// for the ears. Every knock rings in the one hall, so a run of knocks builds
+/// up in the room the way it would in a temple, rather than each in its own.
 ///
 /// The engine runs only while a knock rings. A running engine holds the audio
 /// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
 @MainActor
 final class KnockSound {
-    private struct Slot {
-        let dry: AVAudioPlayerNode
-        let hall: AVAudioPlayerNode
-        var freeAt = 0.0
-    }
-
     /// How long the engine stays up after the last knock has rung out, so a
     /// run of knocks doesn't start it again for each one.
     private static let linger = 2.0
 
     private let engine = AVAudioEngine()
-    private var slots: [Slot] = []
-    private var cache: [KnockSynth.Variation] = []
+    private let environment = AVAudioEnvironmentNode()
+    private let mix = KnockMix()
+    private let dry: AVAudioSourceNode
+    private let hall: AVAudioSourceNode
     private var voice = ""
-    private var space = KnockSynth.Hall.defaultSpace
+    private var space: Float = -1
+    private var tail = 3.0
+    private var ringsUntil = 0.0
     private var quiet: Task<Void, Never>?
-    private let mono = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 1)!
-    private let stereo = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 2)!
+    /// Where the fish sits on its screen, and whether the knock goes to headphones.
+    private var spot: (x: Float, y: Float) = (0.5, 0.5)
+    private var headphones = false
 
     init() {
-        for _ in 0..<12 {
-            let dry = AVAudioPlayerNode()
-            let hall = AVAudioPlayerNode()
-            engine.attach(dry)
-            engine.attach(hall)
-            engine.connect(dry, to: engine.mainMixerNode, format: mono)
-            engine.connect(hall, to: engine.mainMixerNode, format: stereo)
-            slots.append(Slot(dry: dry, hall: hall))
-        }
+        let sr = Double(KnockSynth.sampleRate)
+        let mono = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 1)!
+        let stereo = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 2)!
+        let blocks = Self.renderers(mix)
+        dry = AVAudioSourceNode(format: mono, renderBlock: blocks.dry)
+        hall = AVAudioSourceNode(format: stereo, renderBlock: blocks.hall)
+        for node in [dry, environment, hall] as [AVAudioNode] { engine.attach(node) }
+        // The knock itself is a point in space; the hall is all around.
+        engine.connect(dry, to: environment, format: mono)
+        engine.connect(environment, to: engine.mainMixerNode, format: nil)
+        engine.connect(hall, to: engine.mainMixerNode, format: stereo)
+        environment.reverbParameters.enable = false
+        dry.sourceMode = .pointSource
+        dry.reverbBlend = 0
+        route()
         engine.prepare()
+    }
+
+    /// The render blocks run on the audio thread, so they are made outside the main actor.
+    private nonisolated static func renderers(_ mix: KnockMix) -> (dry: AVAudioSourceNodeRenderBlock, hall: AVAudioSourceNodeRenderBlock) {
+        let dry: AVAudioSourceNodeRenderBlock = { _, _, frames, list in
+            mix.renderDry(UnsafeMutableAudioBufferListPointer(list)[0], Int(frames))
+            return noErr
+        }
+        let hall: AVAudioSourceNodeRenderBlock = { _, _, frames, list in
+            let buffers = UnsafeMutableAudioBufferListPointer(list)
+            mix.renderHall(buffers[0], buffers[1], Int(frames))
+            return noErr
+        }
+        return (dry, hall)
     }
 
     /// Wear this voice, in a room of this size. Unknown names, and none, are
@@ -480,55 +552,66 @@ final class KnockSound {
     func use(voice name: String?, space: Float) {
         let next = KnockSynth.resolve(name)
         guard next != voice || space != self.space else { return }
+        // A new voice keeps the room ringing; only a new room starts it afresh.
+        let room = space != self.space ? KnockSynth.Hall.Room(space: space) : nil
         voice = next
         self.space = space
-        cache = KnockSynth.prepare(next, space: space)
+        if let room { tail = room.tail }
+        mix.use(room: room, gain: KnockSynth.Hall.gain(for: KnockSynth.reference(next), space: space))
     }
 
-    /// Where the fish sits, from -1 at the screen's left edge to 1 at its
-    /// right. Knocks still ringing move with it.
-    var pan: Float = 0 {
-        didSet {
-            for slot in slots {
-                slot.dry.pan = pan
-                slot.hall.pan = pan
-            }
+    /// Where the fish sits on its screen: `x` from 0 at the left edge to 1 at
+    /// the right, `y` from 0 at the bottom to 1 at the top. Not all the way
+    /// round: it is in front of you, a little to one side. Knocks still ringing
+    /// move with it.
+    func place(x: Float, y: Float) {
+        spot = (min(max(x, 0), 1), min(max(y, 0), 1))
+        // On headphones the knock is rendered for the ears, up and down as well
+        // as across. Speakers get a gentle pan: rendered for ears, a knock at
+        // the screen's edge comes out of one speaker alone.
+        let azimuth = (spot.x * 2 - 1) * (headphones ? 0.7 : 0.25)
+        let elevation = headphones ? (spot.y * 2 - 1) * 0.26 : 0
+        dry.position = AVAudio3DPoint(x: sin(azimuth) * cos(elevation), y: sin(elevation),
+                                      z: -cos(azimuth) * cos(elevation))
+    }
+
+    /// Render for the output in use. Checked as the engine starts, which it
+    /// does after every quiet and after the output changes.
+    private func route() {
+        headphones = Headphones.inUse()
+        environment.outputType = headphones ? .headphones : .externalSpeakers
+        dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
+        place(x: spot.x, y: spot.y)
+    }
+
+    /// Start synthesizing one knock of the worn voice while the mallet falls.
+    func synthesize(force: Float, place: Float) -> Task<[Float], Never> {
+        let voice = voice
+        return Task.detached(priority: .userInitiated) {
+            KnockSynth.knock(voice, force: force, place: place)
         }
     }
 
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
-    /// a rushed knock is also a little quieter.
-    func play(volume: Float, bloom: Float) {
-        guard !cache.isEmpty, !slots.isEmpty else { return }
-        // A player node raises an exception if played while its engine is down.
+    /// a rushed knock is also a little quieter. Even a rushed knock sends a
+    /// little to the hall, so a run of them builds up in the room together.
+    func play(_ knock: [Float], volume: Float, bloom: Float) {
+        guard knock.count > 1 else { return }
         if !engine.isRunning {
+            route()
             do { try engine.start() } catch { return }
         }
+        let gain = volume * .random(in: 0.92...1.0)
+        mix.add(knock, dry: gain * (0.8 + 0.2 * bloom), send: gain * (0.25 + 0.75 * bloom))
         let now = ProcessInfo.processInfo.systemUptime
-        let index = slots.indices.filter { slots[$0].freeAt <= now }.randomElement()
-            ?? slots.indices.min { slots[$0].freeAt < slots[$1].freeAt }!
-        let variation = cache.randomElement()!
-        // No two knocks are quite the same.
-        let rate = Float.random(in: 0.98...1.02)
-        let gain = volume * .random(in: 0.88...1.0)
-        let ringsHall = bloom > 0.01
-        guard let dry = buffer(variation.dry, format: mono, rate: rate) else { return }
-        start(slots[index].dry, dry, volume: gain * (0.8 + 0.2 * bloom))
-        var until = now + Double(dry.frameLength) / Double(KnockSynth.sampleRate)
-        if ringsHall, let hall = buffer(variation.left, variation.right, format: stereo, rate: rate) {
-            start(slots[index].hall, hall, volume: gain * bloom)
-            until = max(until, now + Double(hall.frameLength) / Double(KnockSynth.sampleRate))
-        } else {
-            slots[index].hall.stop()
-        }
-        slots[index].freeAt = until
+        let rings = Double(knock.count) / Double(KnockSynth.sampleRate) + tail
+        ringsUntil = max(ringsUntil, now + rings)
         pauseWhenQuiet()
     }
 
     /// Pause the engine once every knock has rung out, plus `linger`.
     private func pauseWhenQuiet() {
         quiet?.cancel()
-        let ringsUntil = slots.map(\.freeAt).max() ?? 0
         let wait = ringsUntil + Self.linger - ProcessInfo.processInfo.systemUptime
         quiet = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(wait, 0)))
@@ -536,43 +619,144 @@ final class KnockSound {
             self.engine.pause()
         }
     }
+}
 
-    private func start(_ node: AVAudioPlayerNode, _ buffer: AVAudioPCMBuffer, volume: Float) {
-        node.stop()
-        node.volume = volume
-        node.scheduleBuffer(buffer, completionHandler: nil)
-        node.play()
+/// The mix as the audio thread sees it. The main thread hands it knocks and
+/// rooms through `inbox`, and takes back the knocks that have rung out; the
+/// audio thread never allocates or frees.
+private final class KnockMix: @unchecked Sendable {
+    /// A knock's samples, owned by whichever side holds it; the inbox hands it over.
+    struct Voice: @unchecked Sendable {
+        var samples: UnsafeMutableBufferPointer<Float>
+        var at = 0
+        var dry: Float
+        var send: Float
     }
 
-    private func buffer(_ samples: [Float], format: AVAudioFormat, rate: Float) -> AVAudioPCMBuffer? {
-        guard samples.count > 1,
-              let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Float(samples.count) / rate) + 1),
-              let dst = buf.floatChannelData?[0] else { return nil }
-        buf.frameLength = AVAudioFrameCount(write(samples, into: dst, capacity: Int(buf.frameCapacity), rate: rate))
-        return buf
+    struct Inbox {
+        var voices: [Voice] = []
+        var spent: [Voice] = []
+        var room: KnockSynth.Hall.Room?
+        var gain: Float?
+        var oldRoom: KnockSynth.Hall.Room?
     }
 
-    private func buffer(_ left: [Float], _ right: [Float], format: AVAudioFormat, rate: Float) -> AVAudioPCMBuffer? {
-        guard left.count > 1,
-              let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Float(left.count) / rate) + 1),
-              let l = buf.floatChannelData?[0], let r = buf.floatChannelData?[1] else { return nil }
-        let n = write(left, into: l, capacity: Int(buf.frameCapacity), rate: rate)
-        _ = write(right, into: r, capacity: Int(buf.frameCapacity), rate: rate)
-        buf.frameLength = AVAudioFrameCount(n)
-        return buf
+    /// More knocks than this at once, and the newest is dropped.
+    private static let capacity = 48
+
+    private let inbox: OSAllocatedUnfairLock<Inbox>
+    // The main thread's.
+    private var alive = 0
+    // The audio thread's.
+    private var playing: [Voice] = []
+    private var finished: [Voice] = []
+    private var room = KnockSynth.Hall.Room(space: KnockSynth.Hall.defaultSpace)
+    private var gain: Float = 0
+    /// What the knocks send to the hall, from the dry render to the hall's.
+    private var send = [Float](repeating: 0, count: 1 << 14)
+    private var sent = 0
+    private var heard = 0
+
+    init() {
+        var box = Inbox()
+        box.voices.reserveCapacity(Self.capacity)
+        box.spent.reserveCapacity(Self.capacity)
+        inbox = OSAllocatedUnfairLock(initialState: box)
+        playing.reserveCapacity(Self.capacity)
+        finished.reserveCapacity(Self.capacity)
     }
 
-    private func write(_ samples: [Float], into dst: UnsafeMutablePointer<Float>, capacity: Int, rate: Float) -> Int {
-        var n = 0
-        var pos: Float = 0
-        let last = samples.count - 1
-        while n < capacity && pos < Float(last) {
-            let j = Int(pos)
-            let f = pos - Float(j)
-            dst[n] = samples[j] + (samples[j + 1] - samples[j]) * f
-            pos += rate
-            n += 1
+    func use(room: KnockSynth.Hall.Room?, gain: Float) {
+        // The room the audio thread let go of is freed here, outside the lock.
+        _ = inbox.withLock { box in
+            box.room = room ?? box.room
+            box.gain = gain
+            defer { box.oldRoom = nil }
+            return box.oldRoom
         }
-        return n
+    }
+
+    func add(_ knock: [Float], dry: Float, send: Float) {
+        let (spent, _) = inbox.withLock { box in
+            defer { box.spent.removeAll(keepingCapacity: true); box.oldRoom = nil }
+            return (box.spent, box.oldRoom)
+        }
+        for voice in spent { voice.samples.deallocate() }
+        alive -= spent.count
+        guard alive < Self.capacity else { return }
+        let samples = UnsafeMutableBufferPointer<Float>.allocate(capacity: knock.count)
+        _ = samples.initialize(from: knock)
+        alive += 1
+        let voice = Voice(samples: samples, dry: dry, send: send)
+        inbox.withLock { $0.voices.append(voice) }
+    }
+
+    func renderDry(_ buffer: AudioBuffer, _ frames: Int) {
+        inbox.withLock { box in
+            playing.append(contentsOf: box.voices)
+            box.voices.removeAll(keepingCapacity: true)
+            box.spent.append(contentsOf: finished)
+            finished.removeAll(keepingCapacity: true)
+        }
+        guard let out = buffer.mData?.assumingMemoryBound(to: Float.self) else { return }
+        let mask = send.count - 1
+        for k in 0..<frames {
+            out[k] = 0
+            send[(sent + k) & mask] = 0
+        }
+        var i = 0
+        while i < playing.count {
+            let v = playing[i]
+            let n = min(frames, v.samples.count - v.at)
+            for k in 0..<n {
+                let s = v.samples[v.at + k]
+                out[k] += s * v.dry
+                send[(sent + k) & mask] += s * v.send
+            }
+            if v.at + n >= v.samples.count {
+                finished.append(v)
+                playing.remove(at: i)
+            } else {
+                playing[i].at += n
+                i += 1
+            }
+        }
+        sent += frames
+        for k in 0..<frames { out[k] = Self.soft(out[k]) }
+    }
+
+    func renderHall(_ left: AudioBuffer, _ right: AudioBuffer, _ frames: Int) {
+        inbox.withLock { box in
+            if var next = box.room {
+                swap(&room, &next)
+                box.oldRoom = next
+                box.room = nil
+            }
+            if let g = box.gain {
+                gain = g
+                box.gain = nil
+            }
+        }
+        guard let l = left.mData?.assumingMemoryBound(to: Float.self),
+              let r = right.mData?.assumingMemoryBound(to: Float.self) else { return }
+        // The dry render may come before or after this one in a cycle; either
+        // way the hall hears it at most one buffer late, a touch of pre-delay.
+        if sent - heard > 2 * frames { heard = sent - frames }
+        let ready = min(sent - heard, frames)
+        let lead = frames - ready
+        let mask = send.count - 1
+        for k in 0..<frames {
+            let x = k < lead ? 0 : send[(heard + k - lead) & mask]
+            let (a, b) = room.process(x)
+            l[k] = Self.soft(a * gain)
+            r[k] = Self.soft(b * gain)
+        }
+        heard += ready
+    }
+
+    /// Leave the knock alone, and round off a pile of them before it clips.
+    private static func soft(_ x: Float) -> Float {
+        let a = abs(x)
+        return a < 0.8 ? x : copysign(0.8 + 0.2 * tanh((a - 0.8) / 0.2), x)
     }
 }

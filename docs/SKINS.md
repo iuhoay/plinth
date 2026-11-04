@@ -116,7 +116,7 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 | `ceramic` | A spoon on the rim of a full mug: a bright ting, damped by the coffee. |
 | `temple` | A big old temple fish under a cloth-wrapped mallet: lower and rounder than `wood`, with the click padded away. |
 
-Every voice is heard in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
+Every knock is synthesized as the mallet falls, louder and brighter the harder it lands, and with more of the shell and less of the hollow the further from the strike point. Each voice is tuned at a medium blow on the strike point. Every knock rings on in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
 ## The mallet
 

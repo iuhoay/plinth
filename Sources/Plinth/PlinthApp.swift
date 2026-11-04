@@ -55,7 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func placeSound() {
         guard let screen = panel.screen ?? NSScreen.main else { return }
-        Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width)
+        Fish.shared.heard(at: (panel.frame.midX - screen.frame.minX) / screen.frame.width,
+                          (panel.frame.midY - screen.frame.minY) / screen.frame.height)
     }
 
     /// `plinth://knock` knocks once, so scripts and other apps can knock.
