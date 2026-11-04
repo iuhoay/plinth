@@ -6,7 +6,8 @@
 "Auto-Knock" = "自动敲击";
 "Pace" = "节奏";
 "Slow · every 2 s" = "慢 · 每 2 秒";
-"Steady · every 1 s" = "稳 · 每 1 秒";
+"Moderate · every 1 s" = "中 · 每 1 秒";
+"Every %.1f s" = "每 %.1f 秒";
 "Fast · every 0.5 s" = "快 · 每 0.5 秒";
 "Knock as You Type" = "打字时跟着敲";
 "Placement" = "位置";

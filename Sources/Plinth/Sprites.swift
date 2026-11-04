@@ -121,6 +121,26 @@ extension NSImage {
     }
 }
 
+extension NSImage {
+    private static var thumbnailsKey: UInt8 = 0
+
+    /// The figure alone, without the empty air its frame keeps for the
+    /// mallet, so a tile or menu item shows the skin rather than space. Kept,
+    /// as finding the figure reads every pixel. Kept on the source image
+    /// itself, so it goes when the skins are read afresh and the old images do.
+    func thumbnail(side: CGFloat) -> NSImage {
+        var made = objc_getAssociatedObject(self, &Self.thumbnailsKey) as? [CGFloat: NSImage] ?? [:]
+        if let done = made[side] { return done }
+        let thumbnail = menuBarIcon(side: side)
+        // An image that could not be cropped comes back as itself; holding it would keep it forever.
+        if thumbnail !== self {
+            made[side] = thumbnail
+            objc_setAssociatedObject(self, &Self.thumbnailsKey, made, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        return thumbnail
+    }
+}
+
 /// A skin to choose: one that ships with the app, or one in the skins folder.
 struct SkinOption: Identifiable {
     /// "" for the wooden fish, "builtin/<folder>" for the others that ship
