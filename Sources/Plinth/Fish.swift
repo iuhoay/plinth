@@ -158,6 +158,9 @@ final class Fish {
     /// Every skin to choose from: those that ship with the app, then the user's.
     var allSkins: [SkinOption] { SkinOption.builtIn + skins }
 
+    /// The community gallery, where skins are shared as .plinthskin files.
+    static let moreSkins = URL(string: "https://github.com/rubycatco/plinth-skins")!
+
     static let skinsDirectory: URL = {
         let dir = URL.applicationSupportDirectory.appending(path: "Plinth/Skins")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

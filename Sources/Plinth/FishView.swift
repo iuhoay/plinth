@@ -147,6 +147,7 @@ struct FishMenu: View {
             Divider()
             Button("Add Skins…") { fish.addSkins() }
             Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+            Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
         }
         Divider()
         let updates = Updates.shared

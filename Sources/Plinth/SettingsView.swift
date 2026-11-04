@@ -133,6 +133,8 @@ private struct SkinSettings: View {
                 HStack {
                     Button("Add Skins…") { fish.addSkins() }
                     Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
+                    Spacer()
+                    Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
                 }
             } header: {
                 Text("Your Skins")
