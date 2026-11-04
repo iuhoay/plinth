@@ -23,14 +23,14 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 ## Features
 
-- **Knock it.** Click the fish. A mallet swings, the wood gives a little, and it sounds. The longer the quiet before a knock, the longer it rings. The knock comes from where the fish sits, a little left or right, and follows it as you drag. It rings in a room you choose, from a small meditation room to a great hall. On a Force Touch trackpad, the trackpad taps back as the mallet lands.
-- **Auto-knock.** The fish keeps time on its own, every 0.4 to 4 seconds, in one of three rhythms: steady; quickening (起板), which starts slow, speeds into a roll and rests, the way a chant begins; or natural, with each gap a little longer or shorter. It can stop after 108 knocks, one full turn of a mala.
-- **A stick of incense.** Light one for 25, 45, or 60 minutes. One knock when you light it, silence while it burns down beside the fish, three knocks when it goes out. It keeps no clock and no count.
-- **Knock as you type.** If you turn it on, each key you press in any app knocks once, and after a pause the next key rings longer. It needs no special permission, because Plinth only notices *when* a key goes down, never which key.
+- **Knock it.** Click the fish and the mallet falls. The longer the silence before a knock, the longer it rings. It sounds from where the fish sits, in a room you choose, from a meditation room to a great hall. On a Force Touch trackpad, you feel the mallet land.
+- **Auto-knock.** Every 0.4 to 4 seconds: steady, quickening (起板), or natural. It can stop at 108, one turn of a mala.
+- **A stick of incense.** 25, 45, or 60 minutes. One knock to light it, three when it goes out, silence between. No clock, no count.
+- **Knock as you type.** Optional. Each key, in any app, knocks once; after a pause, the knock rings longer. Plinth never learns which key.
 - **A few words.** The fish has a few things to say, and says each of them once.
-- **Out of the way.** No Dock icon. It floats above your windows or rests on the desktop, wherever you drag it.
-- **Updates.** Once a day it asks GitHub whether there's a newer Plinth, and asks you before installing it. You can turn this off in Settings.
-- **Skins.** Twenty ship with the app, each with its own mallet and knock, and most with their own burst: the wooden fish, a jade fish, a red lacquer fish, a blue-and-white porcelain fish, a singing bowl, a cloud gong, a bianzhong bell, a stone chime, a fish board, a pixel-art fish, a cartoon fish, an ink-wash fish, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a seal, and a mug. The space key presses down and springs back; it doesn't type anything. The piston compresses and rebounds; the CRT briefly flashes a waveform, without running commands. The abacus flicks a bead and keeps no count; the cloud gong and the bianzhong swing back on their cords, and the stone chime rocks. The seal leaves a 空 (empty) where it lands; the mug splashes, and the coffee stays in the cup. You can also make your own from a folder of sprite frames or a single image.
+- **Out of the way.** No Dock icon. Above your windows or on the desktop, wherever you put it.
+- **Updates.** Checks GitHub once a day and asks before installing. You can turn this off.
+- **Skins.** Twenty, each with its own mallet and knock. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling. You can also make your own from a single image or a folder of frames.
 
 What little the fish says is in the original Chinese, as you would hear it in a temple. Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise.
 
