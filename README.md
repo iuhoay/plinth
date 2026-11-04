@@ -4,7 +4,7 @@ English · [简体中文](README.zh-Hans.md)
 
 A tiny wooden fish that lives on your Mac's desktop. Click it to knock and hear a soft *tok*. That's all. You earn no merit (功德) for it.
 
-![Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
+![Under the line 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 ("A fish never closes its eyes. Carve one in wood and strike it, to keep the drowsy awake."), Plinth's twenty built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, and a mug](docs/skins.png)
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Old monastic rules say it is shaped like a fish because a fish never closes its eyes, so its knock keeps the drowsy awake. Plinth puts one on a small neon pedestal next to your windows.
 
@@ -120,7 +120,7 @@ App/                Info.plist, app icon, and bundled resources (skins, mallet, 
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
-tools/              skin impact drawings (Python: NumPy, Pillow)
+tools/              skin impact drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
 ```
 
 ## License
