@@ -5,7 +5,7 @@ import Foundation
 /// stored: a skin names a voice, and the voice is a handful of numbers.
 enum KnockSynth {
     static let sampleRate: Float = 44100
-    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt"]
+    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic"]
 
     struct Variation {
         var dry: [Float]
@@ -18,12 +18,13 @@ enum KnockSynth {
         return name
     }
 
-    /// Three strikes of `name`, so a run of knocks is not one recording played again.
-    static func prepare(_ name: String) -> [Variation] {
+    /// Three strikes of `name`, so a run of knocks is not one recording played
+    /// again, heard in a room of size `space` (see `Hall.shape`).
+    static func prepare(_ name: String, space: Float = Hall.defaultSpace) -> [Variation] {
         let tone = tones[resolve(name)]!
         return tone.bases.enumerated().map { i, base in
             let dry = strike(tone, base: base, seed: tone.seed &+ UInt64(i))
-            let hall = Hall.render(dry)
+            let hall = Hall.render(dry, space: space)
             return Variation(dry: dry, left: hall.left, right: hall.right)
         }
     }
@@ -136,6 +137,64 @@ enum KnockSynth {
             bases: [210, 204, 216], length: 0.4, seed: 101,
             modes: [Mode(ratio: 1, amp: 1, tau: 0.05), Mode(ratio: 2.1, amp: 0.18, tau: 0.02)],
             noise: Noise(amp: 0.28, tau: 0.008, low: 200, high: 900), attack: 0.002, lowpass: 1100, crush: true),
+        // Rosewood beads knocked together: small, dense, a dry clack with no hollow.
+        "bead": Tone(
+            bases: [1050, 1030, 1072], length: 0.3, seed: 103,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.030), Mode(ratio: 2.71, amp: 0.42, tau: 0.016),
+                    Mode(ratio: 5.2, amp: 0.16, tau: 0.007)],
+            body: Mode(ratio: 0.42, amp: 0.10, tau: 0.03),
+            noise: Noise(amp: 0.55, tau: 0.0016, low: 2500, high: 8000), attack: 0.0004),
+        // A flat bronze plate under a leather mallet. A plate's partials don't line
+        // up the way a bowl's do, and the soft head keeps the clang out.
+        "plate": Tone(
+            bases: [330, 322, 338], length: 1.3, seed: 107,
+            modes: [Mode(ratio: 1, amp: 0.8, tau: 0.55, cents: 6), Mode(ratio: 1.59, amp: 1, tau: 0.38, cents: 9),
+                    Mode(ratio: 2.14, amp: 0.55, tau: 0.22, cents: 12), Mode(ratio: 2.65, amp: 0.30, tau: 0.12),
+                    Mode(ratio: 3.61, amp: 0.14, tau: 0.06)],
+            noise: Noise(amp: 0.18, tau: 0.003, low: 600, high: 2800), attack: 0.002, lowpass: 5000),
+        // Thin glazed porcelain: high, bright and clean, a short ring.
+        "porcelain": Tone(
+            bases: [1180, 1160, 1204], length: 0.7, seed: 109,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.14), Mode(ratio: 2.32, amp: 0.36, tau: 0.06),
+                    Mode(ratio: 4.1, amp: 0.16, tau: 0.024), Mode(ratio: 6.9, amp: 0.08, tau: 0.009)],
+            noise: Noise(amp: 0.30, tau: 0.0008, low: 5000, high: 13000), attack: 0.0003),
+        // An almond-shaped bronze bell: two notes a minor third apart, struck with
+        // wood, and damped sooner than a round bell would be.
+        "bell": Tone(
+            bases: [392, 384, 400], length: 1.4, seed: 113,
+            modes: [Mode(ratio: 0.5, amp: 0.30, tau: 0.50), Mode(ratio: 1, amp: 1, tau: 0.40, cents: 4),
+                    Mode(ratio: 1.19, amp: 0.65, tau: 0.32), Mode(ratio: 2.4, amp: 0.35, tau: 0.12),
+                    Mode(ratio: 3.1, amp: 0.20, tau: 0.06), Mode(ratio: 4.9, amp: 0.10, tau: 0.03)],
+            noise: Noise(amp: 0.25, tau: 0.002, low: 800, high: 4000), attack: 0.001),
+        // A stone seal pressed onto paper: a short, dull thud.
+        "stamp": Tone(
+            bases: [180, 172, 188], length: 0.3, seed: 127,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.030), Mode(ratio: 2.3, amp: 0.35, tau: 0.015),
+                    Mode(ratio: 3.9, amp: 0.12, tau: 0.008)],
+            body: Mode(ratio: 0.6, amp: 0.40, tau: 0.04),
+            noise: Noise(amp: 0.60, tau: 0.006, low: 300, high: 2500), attack: 0.001, lowpass: 2500),
+        // A thin slab of stone hung on a cord. It rings longer than the jade fish,
+        // and the felt mallet keeps the attack soft.
+        "chime": Tone(
+            bases: [560, 548, 574], length: 1.2, seed: 131,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.35), Mode(ratio: 2.76, amp: 0.45, tau: 0.14),
+                    Mode(ratio: 5.4, amp: 0.20, tau: 0.05), Mode(ratio: 8.9, amp: 0.08, tau: 0.015)],
+            noise: Noise(amp: 0.15, tau: 0.003, low: 1000, high: 5000), attack: 0.0015),
+        // The long wooden fish that hangs outside the hall: lower than the
+        // wooden fish, and longer.
+        "board": Tone(
+            bases: [430, 420, 442], length: 0.95, seed: 137,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.13), Mode(ratio: 1.58, amp: 0.50, tau: 0.08),
+                    Mode(ratio: 2.42, amp: 0.28, tau: 0.05), Mode(ratio: 3.3, amp: 0.14, tau: 0.03)],
+            body: Mode(ratio: 0.5, amp: 0.45, tau: 0.18),
+            noise: Noise(amp: 0.55, tau: 0.004, low: 1200, high: 6000), attack: 0.001),
+        // A spoon on the rim of a full mug: a bright ting, damped by the coffee.
+        "ceramic": Tone(
+            bases: [1450, 1420, 1480], length: 0.5, seed: 139,
+            modes: [Mode(ratio: 1, amp: 1, tau: 0.09), Mode(ratio: 2.1, amp: 0.45, tau: 0.05),
+                    Mode(ratio: 3.5, amp: 0.25, tau: 0.02), Mode(ratio: 5.6, amp: 0.10, tau: 0.01)],
+            body: Mode(ratio: 0.35, amp: 0.15, tau: 0.05),
+            noise: Noise(amp: 0.45, tau: 0.0007, low: 5000, high: 14000), attack: 0.0002),
     ]
 
     private static func strike(_ tone: Tone, base: Float, seed: UInt64) -> [Float] {
@@ -228,14 +287,32 @@ enum KnockSynth {
         return last
     }
 
-    /// One large wooden hall. Every voice is heard in it; the app mixes more of
-    /// the tail in the longer the quiet before a knock.
-    private enum Hall {
-        static let length: Float = 3
-        static let directToHall: Float = 2
+    /// One wooden room, from a small meditation room to a large hall. Every
+    /// voice is heard in it; the app mixes more of the tail in the longer the
+    /// quiet before a knock.
+    enum Hall {
+        /// The hall the knocks have always rung in, and tools/knock_synth.py renders.
+        static let defaultSpace: Float = 0.7
 
-        static func render(_ dry: [Float]) -> (left: [Float], right: [Float]) {
+        /// The room at `space`: 0 a small meditation room (禅房), `defaultSpace`
+        /// a large hall, 1 a larger one (大殿). `size` scales its reflections'
+        /// distances, `rt60` is how long its tail rings, and `directToHall` how
+        /// much quieter that tail is than the knock.
+        static func shape(_ space: Float) -> (size: Float, rt60: Float, directToHall: Float) {
+            let s = min(max(space, 0), 1)
+            // Interpolate from the default up or down, so the default is exact.
+            if s >= defaultSpace {
+                let t = (s - defaultSpace) / (1 - defaultSpace)
+                return (1 + 0.3 * t, 2.3 + 1.3 * t, 2 - 0.4 * t)
+            }
+            let t = (defaultSpace - s) / defaultSpace
+            return (1 - 0.65 * t, 2.3 - 1.85 * t, 2 + 3 * t)
+        }
+
+        static func render(_ dry: [Float], space: Float) -> (left: [Float], right: [Float]) {
+            let (size, rt60, directToHall) = shape(space)
             let sr = KnockSynth.sampleRate
+            let length = max(rt60 + 0.7, 0.8)
             let n = Int(length * sr)
             var left = [Float](repeating: 0, count: n)
             var right = [Float](repeating: 0, count: n)
@@ -246,7 +323,7 @@ enum KnockSynth {
                 (34, 0.16, 0.50), (46, 0.13, -0.15), (58, 0.10, 0.30), (71, 0.08, -0.40),
             ]
             for (ms, gain, pan) in taps {
-                let d = Int(ms / 1000 * sr)
+                let d = Int(ms * size / 1000 * sr)
                 guard d < n else { continue }
                 let lGain = gain * sqrt((1 - pan) / 2)
                 let rGain = gain * sqrt((1 + pan) / 2)
@@ -257,11 +334,11 @@ enum KnockSynth {
                 }
             }
             let delays: [Float] = [47, 53, 59, 67, 73, 83, 89, 97]
-            var combsL = delays.map { Comb(ms: $0, rt60: 2.3, damp: 0.42) }
-            var combsR = delays.map { Comb(ms: $0 + 1.7, rt60: 2.3, damp: 0.42) }
+            var combsL = delays.map { Comb(ms: $0 * size, rt60: rt60, damp: 0.42) }
+            var combsR = delays.map { Comb(ms: ($0 + 1.7) * size, rt60: rt60, damp: 0.42) }
             var allL = [Allpass(ms: 5.1), Allpass(ms: 1.7)]
             var allR = [Allpass(ms: 6.3), Allpass(ms: 2.3)]
-            let pre = Int(0.02 * sr)
+            let pre = Int(0.02 * size * sr)
             for i in 0..<n {
                 let x = i >= pre && i - pre < dry.count ? dry[i - pre] : 0
                 var l: Float = 0
@@ -279,7 +356,7 @@ enum KnockSynth {
                 left[i] += l
                 right[i] += r
             }
-            let fade = Int(0.4 * sr)
+            let fade = Int(min(0.4, length / 3) * sr)
             for i in 0..<fade {
                 let g = pow(1 - Float(i) / Float(fade), 2)
                 left[n - fade + i] *= g
