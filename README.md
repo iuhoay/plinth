@@ -1,3 +1,5 @@
+<img src="App/AppIcon.png" width="96" alt="Plinth">
+
 # Plinth
 
 English · [简体中文](README.zh-Hans.md) · [plinth.fish](https://plinth.fish)
@@ -136,7 +138,7 @@ App/                Info.plist, app icon, disk image background, and bundled res
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
-tools/              skin impact and disk image drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
+tools/              app icon, skin impact, and disk image drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
 ```
 
 ## License

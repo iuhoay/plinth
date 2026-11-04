@@ -1,3 +1,5 @@
+<img src="App/AppIcon.png" width="96" alt="Plinth">
+
 # Plinth
 
 [English](README.md) · 简体中文 · [plinth.fish](https://plinth.fish/zh/)
@@ -134,7 +136,7 @@ App/                Info.plist、App 图标、磁盘映像背景和打包进 App
 scripts/            构建、打包磁盘映像和生成更新源的脚本
 docs/               皮肤格式、发布流程（英文），以及 README 用的图
 .github/workflows/  发布流程
-tools/              绘制皮肤敲击效果、磁盘映像背景、皮肤总览图和宣传视频的脚本（Python：NumPy、SciPy、Pillow)
+tools/              绘制 App 图标、皮肤敲击效果、磁盘映像背景、皮肤总览图和宣传视频的脚本（Python：NumPy、SciPy、Pillow）
 ```
 
 ## 许可
