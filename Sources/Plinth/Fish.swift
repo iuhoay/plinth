@@ -205,7 +205,7 @@ final class Fish {
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
-    /// The worn skin's `SkinOption.id`: "" for the wooden fish.
+    /// The worn skin's `SkinOption.id`: "" for the ink fish.
     var skin: String {
         didSet {
             defaults.set(skin, forKey: "skin")
@@ -215,9 +215,9 @@ final class Fish {
             loadSkin()
         }
     }
-    private(set) var pack = SkinOption.woodenFish.pack
+    private(set) var pack = SkinOption.inkFish.pack
     /// The worn skin, small enough for the menu bar.
-    private(set) var menuIcon = SkinOption.woodenFish.pack.idle.menuBarIcon()
+    private(set) var menuIcon = SkinOption.inkFish.pack.idle.menuBarIcon()
     /// The skins in `skinsDirectory`.
     private(set) var skins: [SkinOption] = []
     /// Every skin to choose from: those that ship with the app, then the user's.
@@ -268,7 +268,9 @@ final class Fish {
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        skin = d.string(forKey: "skin") ?? ""
+        // The ink fish was "builtin/ink-fish" before it became the default.
+        let saved = d.string(forKey: "skin") ?? ""
+        skin = saved == "builtin/ink-fish" ? "" : saved
         refreshSkins()
         loadSkin()
         watchSkins()
@@ -551,7 +553,7 @@ final class Fish {
     }
 
     private func loadSkin() {
-        pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
+        pack = (allSkins.first { $0.id == skin } ?? SkinOption.inkFish).pack
         menuIcon = pack.idle.menuBarIcon()
         sound.use(voice: pack.voice, space: Float(space))
         skinFileWatcher?.cancel()

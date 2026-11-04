@@ -262,7 +262,7 @@ private struct AboutSettings: View {
     static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
 
     @Environment(Fish.self) private var fish
-    private let inkFish = SkinOption.builtIn.first { $0.id == "builtin/ink-fish" } ?? .woodenFish
+    private let inkFish = SkinOption.inkFish
 
     private func knockScrollFish() {
         fish.knock(byHand: false, preview: true)

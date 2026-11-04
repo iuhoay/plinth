@@ -16,7 +16,7 @@ Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens 
 
 Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty-one built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
-A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the wooden fish.
+A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the ink fish.
 
 ## Sharing a skin: .plinthskin
 
@@ -157,15 +157,15 @@ The wooden fishes have no blink or hit frames, on purpose: a fish never closes i
 
 Plinth watches the skins folder. Adding, removing, or renaming a skin shows up within about half a second. Plinth also watches the skin you're wearing, so replacing one of its files updates the fish. Most image editors save by replacing the file. A tool that writes into an existing file in place may go unnoticed in a folder skin until something else changes in the folder.
 
-If you change a skin you aren't wearing, Plinth picks it up the next time the folder changes or the app starts. If the skin you're wearing disappears, Plinth switches to the wooden fish.
+If you change a skin you aren't wearing, Plinth picks it up the next time the folder changes or the app starts. If the skin you're wearing disappears, Plinth switches to the ink fish.
 
 ## Built-in skins
 
-The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one folder each, in the same format. Their names come from `skin.json` in English and from [`Skins.strings`](../App/Resources/zh-Hans.lproj/Skins.strings), keyed by folder name, in other languages. The wooden fish is listed first and the rest follow by folder name.
+The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one folder each, in the same format. Their names come from `skin.json` in English and from [`Skins.strings`](../App/Resources/zh-Hans.lproj/Skins.strings), keyed by folder name, in other languages. The ink fish, worn by default, is listed first and the rest follow by folder name.
 
 | Folder | Name | 中文名 | Voice | Strike | Hit frame | Mallet | Burst |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | no | shared | shared |
+| `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | no | own | own |
 | `abacus` | Abacus | 算盘 | `bead` | 0.5, 0.325 | yes | own | own |
 | `bamboo-block` | Bamboo Block | 竹节 | `bamboo` | 0.52, 0.485 | no | own | own |
 | `bianzhong` | Bianzhong | 编钟 | `bell` | 0.56, 0.66 | yes | own | own |
@@ -173,7 +173,6 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | `cloud-gong` | Cloud Gong | 云板 | `plate` | 0.56, 0.6 | yes | own | own |
 | `crt-terminal` | CRT Terminal | CRT 终端 | `crt` | 0.52, 0.395 | yes | own | own |
 | `fish-board` | Fish Board | 鱼板 | `board` | 0.56, 0.69 | no | own | shared |
-| `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | no | own | own |
 | `jade-fish` | Jade Fish | 玉鱼 | `jade` | 0.625, 0.304 | no | own | own |
 | `moss-stone` | Moss Stone | 苔石 | `stone` | 0.52, 0.375 | no | own | own |
 | `mug` | Mug | 马克杯 | `ceramic` | 0.56, 0.36 | no | own | own |
@@ -186,6 +185,7 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
 | `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | no | own | own |
+| `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | no | shared | shared |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
 

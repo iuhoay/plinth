@@ -16,7 +16,7 @@ Plinth 从这里读取你的皮肤：
 
 文件夹里的每一项就是一款皮肤，可以是单张图片，也可以是一个文件夹。它们按文件名排序，列在二十一款内置皮肤之后。读不了的项会被跳过，也不提示，比如没有 `idle.png` 的文件夹，或者混进来的 `.DS_Store`。
 
-皮肤靠文件名或文件夹名识别。Plinth 按这个名字记住你正在用的皮肤，所以给正在用的皮肤改名，木鱼会换回默认的木鱼。
+皮肤靠文件名或文件夹名识别。Plinth 按这个名字记住你正在用的皮肤，所以给正在用的皮肤改名，木鱼会换回默认的水墨鱼。
 
 ## 分享皮肤：.plinthskin
 
@@ -157,15 +157,15 @@ Plinth 不带任何声音文件。换上皮肤时，它按 `voice` 指定的音�
 
 Plinth 会监视皮肤文件夹。添加、删除或重命名皮肤，大约半秒内生效。它也会监视你正在用的那款皮肤，替换其中的文件会更新木鱼。大多数图片编辑器保存时都是替换文件；如果某个工具直接改写已有文件的内容，文件夹皮肤可能察觉不到，要等文件夹里有别的改动才会更新。
 
-改的不是正在用的皮肤时，等文件夹下次有改动或者 App 重新启动，Plinth 才会读到。正在用的皮肤不见了，Plinth 会换回木鱼。
+改的不是正在用的皮肤时，等文件夹下次有改动或者 App 重新启动，Plinth 才会读到。正在用的皮肤不见了，Plinth 会换回水墨鱼。
 
 ## 内置皮肤
 
-内置皮肤在 [`App/Resources/Skins`](../App/Resources/Skins)，每款一个文件夹，格式和上面相同。英文名字来自各自的 `skin.json`，其他语言的名字来自 [`Skins.strings`](../App/Resources/zh-Hans.lproj/Skins.strings)，以文件夹名为键。木鱼排第一，其余按文件夹名排序。
+内置皮肤在 [`App/Resources/Skins`](../App/Resources/Skins)，每款一个文件夹，格式和上面相同。英文名字来自各自的 `skin.json`，其他语言的名字来自 [`Skins.strings`](../App/Resources/zh-Hans.lproj/Skins.strings)，以文件夹名为键。默认的水墨鱼排第一，其余按文件夹名排序。
 
 | 文件夹 | 英文名 | 中文名 | 音色 | 落点 | 被敲中画面 | 木槌 | 敲击效果 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | 无 | 共用 | 共用 |
+| `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | 无 | 自带 | 自带 |
 | `abacus` | Abacus | 算盘 | `bead` | 0.5, 0.325 | 有 | 自带 | 自带 |
 | `bamboo-block` | Bamboo Block | 竹节 | `bamboo` | 0.52, 0.485 | 无 | 自带 | 自带 |
 | `bianzhong` | Bianzhong | 编钟 | `bell` | 0.56, 0.66 | 有 | 自带 | 自带 |
@@ -173,7 +173,6 @@ Plinth 会监视皮肤文件夹。添加、删除或重命名皮肤，大约半�
 | `cloud-gong` | Cloud Gong | 云板 | `plate` | 0.56, 0.6 | 有 | 自带 | 自带 |
 | `crt-terminal` | CRT Terminal | CRT 终端 | `crt` | 0.52, 0.395 | 有 | 自带 | 自带 |
 | `fish-board` | Fish Board | 鱼板 | `board` | 0.56, 0.69 | 无 | 自带 | 共用 |
-| `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | 无 | 自带 | 自带 |
 | `jade-fish` | Jade Fish | 玉鱼 | `jade` | 0.625, 0.304 | 无 | 自带 | 自带 |
 | `moss-stone` | Moss Stone | 苔石 | `stone` | 0.52, 0.375 | 无 | 自带 | 自带 |
 | `mug` | Mug | 马克杯 | `ceramic` | 0.56, 0.36 | 无 | 自带 | 自带 |
@@ -186,6 +185,7 @@ Plinth 会监视皮肤文件夹。添加、删除或重命名皮肤，大约半�
 | `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | 有 | 自带 | 自带 |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | 有 | 自带 | 自带 |
 | `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | 无 | 自带 | 自带 |
+| `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | 无 | 共用 | 共用 |
 
 内置皮肤都没有眨眼画面。要新增一款内置皮肤，把它的文件夹放进上面的目录，再把中文名加进 `Skins.strings`。如果用了新的美术素材，在 [CREDITS.md](../CREDITS.md) 里注明。
 
