@@ -225,9 +225,9 @@ final class Fish {
             loadSkin()
         }
     }
-    private(set) var pack = SkinOption.woodenFish.pack
+    private(set) var pack = SkinOption.inkFish.pack
     /// The worn skin, small enough for the menu bar.
-    private(set) var menuIcon = SkinOption.woodenFish.pack.idle.menuBarIcon()
+    private(set) var menuIcon = SkinOption.inkFish.pack.idle.menuBarIcon()
     /// The skins in `skinsDirectory`.
     private(set) var skins: [SkinOption] = []
     /// Every skin to choose from: those that ship with the app, then the user's.
@@ -278,7 +278,8 @@ final class Fish {
         size = FishSize(rawValue: d.string(forKey: "size") ?? "") ?? .medium
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
-        skin = d.string(forKey: "skin") ?? ""
+        // A skin is stored only once one is chosen; until then, the ink fish.
+        skin = d.string(forKey: "skin") ?? SkinOption.inkFish.id
         refreshSkins()
         loadSkin()
         watchSkins()
@@ -609,12 +610,12 @@ final class Fish {
             try? await Task.sleep(for: .seconds(0.5))
             guard !Task.isCancelled else { return }
             refreshSkins()
-            if !allSkins.contains(where: { $0.id == skin }) { skin = "" } else { loadSkin() }
+            if !allSkins.contains(where: { $0.id == skin }) { skin = SkinOption.inkFish.id } else { loadSkin() }
         }
     }
 
     private func loadSkin() {
-        pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
+        pack = (allSkins.first { $0.id == skin } ?? SkinOption.inkFish).pack
         menuIcon = pack.idle.menuBarIcon()
         sound.use(voice: pack.voice, space: Float(space))
         skinFileWatcher?.cancel()

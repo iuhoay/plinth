@@ -144,26 +144,31 @@ extension NSImage {
 /// A skin to choose: one that ships with the app, or one in the skins folder.
 struct SkinOption: Identifiable {
     /// "" for the wooden fish, "builtin/<folder>" for the others that ship
-    /// with the app, or the file name in the skins folder.
+    /// with the app, or the file name in the skins folder. The wooden fish
+    /// keeps the "" it had as the default, so a choice of it still holds.
     let id: String
     let title: String
     let pack: SkinPack
 
-    /// The wooden fish first, then the rest in folder order. Their names come
+    /// The skin worn until another is chosen: the ink fish, in the same ink
+    /// and paper as the icon, the disk image and Settings > Why a Fish.
+    private static let defaultFolder = "ink-fish"
+
+    /// The ink fish first, then the rest in folder order. Their names come
     /// from skin.json in English, and from Skins.strings, keyed by folder, in
     /// other languages.
     static let builtIn: [SkinOption] = {
         guard let dir = Bundle.main.url(forResource: "Skins", withExtension: nil) else { return [] }
         let names = ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
-            .sorted { ($0 == "wooden-fish" ? 0 : 1, $0) < ($1 == "wooden-fish" ? 0 : 1, $1) }
+            .sorted { ($0 == defaultFolder ? 0 : 1, $0) < ($1 == defaultFolder ? 0 : 1, $1) }
         return names.compactMap { name in
             guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
             return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
         }
     }()
 
-    static let woodenFish = builtIn.first
-        ?? SkinOption(id: "", title: title("wooden-fish", "Wooden Fish"), pack: SkinPack(idle: NSImage()))
+    static let inkFish = builtIn.first { $0.id == "builtin/\(defaultFolder)" }
+        ?? SkinOption(id: "builtin/\(defaultFolder)", title: title(defaultFolder, "Ink Fish"), pack: SkinPack(idle: NSImage()))
 
     private static func title(_ folder: String, _ english: String) -> String {
         Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")

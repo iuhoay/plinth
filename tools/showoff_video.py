@@ -40,9 +40,9 @@ LAY = dict(glow=(1000, 520, 640), floor=1100, floor_r=520, side=720, near=520, f
 
 # name, folder, chinese, voice, glow colour, caption (from KnockSynth's comments)
 SKINS = [
+    ("Ink Fish", "ink-fish", "水墨鱼", "ink", (190, 190, 200), "A painting of the fish, heard through paper."),
     ("Wooden Fish", "wooden-fish", "木鱼", "wood", (255, 70, 200), "Hollow wood, struck in one wooden hall."),
     ("Cartoon Fish", "cartoon-fish", "卡通鱼", "cartoon", (255, 150, 70), "A small light fish. Round, short, almost no grit."),
-    ("Ink Fish", "ink-fish", "水墨鱼", "ink", (190, 190, 200), "A painting of the fish, heard through paper."),
     ("Jade Fish", "jade-fish", "玉鱼", "jade", (60, 230, 140), "Solid jade, closer to a stone chime than a hollow block."),
     ("Pixel Fish", "pixel-fish", "像素鱼", "pixel", (60, 220, 255), "Wood drawn in pixels: stiff partials, a grainy attack."),
     ("Red Lacquer", "red-lacquer", "朱漆", "lacquer", (255, 175, 60), "A hard lacquered shell, higher, with a sharper click."),
@@ -93,7 +93,7 @@ def font(kind, size):
 
 # ---------------------------------------------------------------- timeline
 SLOT, PARADE = 1.8, 9.0
-OFFSETS = [[.3, .9], [.3, .6, .9], [.3, 1.05], [.3, .9, 1.2], [.3, .45, .6, .9], [.3, .6, .9], [.3],
+OFFSETS = [[.3, 1.05], [.3, .9], [.3, .6, .9], [.3, .9, 1.2], [.3, .45, .6, .9], [.3, .6, .9], [.3],
            [.3, .45, .6, .75, .9], [.3, .9], [.3, .9], [.3, .6, .75, .9], [.3, .9],
            [.3, .45, .6, .9], [.3], [.3, .9], [.3, 1.05], [.3, .9], [.3, 1.0], [.3, .6, .9], [.3, .45, .9], [.3, 1.0]]
 RING = (6, 13, 15)                     # the bronzes, given their full hall
@@ -109,7 +109,7 @@ for k in range(N):
     for o in OFFSETS[k]:
         impacts.append((PARADE + k * SLOT + o, k, 1.0 if k in RING else 0.3, "car"))
 groove = {8: [0, 3, 8, 10], 7: [4, 12], 9: [4], 10: [12], 5: [2, 6, 10, 14], 4: [7, 15], 11: [9],
-          0: [6, 11], 2: [5], 1: [13], 16: [0, 8], 12: [1, 9], 19: [3, 11], 18: [14], 14: [11], 17: [15], 20: [10]}
+          1: [6, 11], 0: [5], 2: [13], 16: [0, 8], 12: [1, 9], 19: [3, 11], 18: [14], 14: [11], 17: [15], 20: [10]}
 for k in range(N):
     impacts.append((GRID0 + k * STEP, k, .25, "grid"))
 for bar in (1, 2, 3):
@@ -125,7 +125,7 @@ for bar in (1, 2, 3):
         impacts.append((GRID0 + 32 * STEP, 15, .5, "grid"))
     if bar == 3:
         impacts.append((GRID0 + 48 * STEP, 13, .5, "grid"))
-for i, k in enumerate([0, 1, 3, 5]):          # fill
+for i, k in enumerate([1, 2, 3, 5]):          # fill
     impacts.append((GRID0 + (48 + 12 + i) * STEP, k, .2, "grid"))
 impacts.append((GRID0 + (48 + 12) * STEP, 8, .2, "grid"))
 for k in range(N):

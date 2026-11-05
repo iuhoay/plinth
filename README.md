@@ -1,12 +1,14 @@
+<img src="App/AppIcon.png" width="96" alt="Plinth">
+
 # Plinth
 
 English · [简体中文](README.zh-Hans.md) · [plinth.fish](https://plinth.fish)
 
 A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*, nothing more. Knocking earns no merit (功德).
 
-![Under 「并无功德」 ("No merit at all"), Plinth's twenty-one built-in skins, each on its pedestal with its mallet raised: the wooden fish, a cartoon fish, an ink-wash fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, a mug, and an old temple fish](docs/skins.png)
+![Under 「并无功德」 ("No merit at all"), Plinth's twenty-one built-in skins, each on its pedestal with its mallet raised: an ink-wash fish, the neon wooden fish, a cartoon fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, a mug, and an old temple fish](docs/skins.png)
 
-The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one on a small neon pedestal next to your windows.
+The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one, brushed in ink, on a small pedestal next to your windows.
 
 Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a running score. Plinth keeps none. When Emperor Wu listed the temples he had built and asked Bodhidharma how much merit he had earned, the answer was 「并无功德」, none at all. Your first knock gets the same answer. Focus timers pin every passing second to the screen and habit apps turn rest into another streak to keep; Plinth keeps no count and shows no clock. It speaks fourteen lines from the Chan records, one a day, ending with Vimalakirti's silence; after that, it only knocks.
 
@@ -101,7 +103,7 @@ In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed
 
 ## Skins
 
-Twenty-one skins ship with Plinth, each with its own mallet and synthesized voice. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling.
+Twenty-one skins ship with Plinth, each with its own mallet and synthesized voice. The fish starts in ink, as on its icon; the neon wooden fish and the rest are under **Skin** in the menu. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling.
 
 A skin of your own is a single image, or a folder with an `idle.png` and, optionally, blink and hit frames, its own mallet and burst, and a `skin.json` for its name, where the mallet lands, and which knock it makes:
 
@@ -137,7 +139,7 @@ App/                Info.plist, app icon, disk image background, and bundled res
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image
 .github/workflows/  the release workflow
-tools/              skin impact and disk image drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
+tools/              app icon, skin impact, and disk image drawings, the skins picture, the show-off video (Python: NumPy, SciPy, Pillow)
 ```
 
 ## License
