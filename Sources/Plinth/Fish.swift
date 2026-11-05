@@ -113,6 +113,7 @@ final class Fish {
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let sound = KnockSound()
     @ObservationIgnored private let typing = TypingWatcher()
+    @ObservationIgnored private let malletWatcher = MalletKeyWatcher()
     @ObservationIgnored private var autoTask: Task<Void, Never>?
     @ObservationIgnored var onWindowChange: (() -> Void)?
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
@@ -127,6 +128,10 @@ final class Fish {
     private(set) var swing = Swing()
     /// A swing by hand still in the air, until the mallet lands.
     @ObservationIgnored private var handSwing: (serial: Int, task: Task<Void, Never>)?
+    /// A typed key's short swing still in the air, cancelled if a knock by hand
+    /// (such as the mallet key) arrives in the same keystroke.
+    @ObservationIgnored private var quickSwing: Task<Void, Never>?
+    @ObservationIgnored private var recordingMalletKey = false
     /// A knock to sound once the room being rendered is ready, to hear it.
     @ObservationIgnored private var previewAfterSpace = false
     /// Counts the moments the mallet meets the figure. Nothing else is
@@ -142,8 +147,10 @@ final class Fish {
     /// The stick of incense burning beside the fish, if one is lit.
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
-    /// The fish calling you back, while it sounds. See `call()`.
+    /// The fish calling you back, while it sounds, and when its first knock
+    /// landed, from which a key or click anywhere ends the call. See `call()`.
     @ObservationIgnored private var callTask: Task<Void, Never>?
+    @ObservationIgnored private var callLanded = Double.infinity
     /// When the last key went down, and when the stretch of typing it belongs
     /// to began, on a clock that keeps going while the Mac sleeps, since a
     /// night's sleep is a rest. Kept only for the bell, never stored.
@@ -205,6 +212,9 @@ final class Fish {
     var size: FishSize {
         didSet { defaults.set(size.rawValue, forKey: "size"); onWindowChange?() }
     }
+    /// A key, pedal or button that is the mallet: pressed in any app, it
+    /// knocks as a click on the fish does. See `useMalletKey`.
+    private(set) var malletKey: MalletKey?
     /// The worn skin's `SkinOption.id`: "" for the wooden fish.
     var skin: String {
         didSet {
@@ -275,6 +285,12 @@ final class Fish {
         restartAuto()
         typing.onPress = { [weak self] in self?.typed() }
         watchTyping()
+        malletKey = MalletKey(stored: d.dictionary(forKey: "malletKey"))
+        malletWatcher.onPress = { [weak self] in
+            self?.typing.skip()
+            self?.knock(byHand: true)
+        }
+        _ = malletWatcher.watch(malletKey)
         // A while after the screens sleep, auto-knock rests, and the Mac can sleep.
         let workspace = NSWorkspace.shared.notificationCenter
         workspace.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
@@ -306,6 +322,10 @@ final class Fish {
     }
 
     private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
+        if byHand {
+            quickSwing?.cancel()
+            quickSwing = nil
+        }
         swing = Swing(serial: swing.serial + 1, quick: quick)
         let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
@@ -328,6 +348,7 @@ final class Fish {
             guard !Task.isCancelled else { return }
             if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
+            guard !Task.isCancelled else { return }
             let now = ProcessInfo.processInfo.systemUptime
             bloom = full ? 1 : Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
@@ -345,6 +366,28 @@ final class Fish {
             }
         }
         if byHand && !preview { handSwing = (serial, swingTask) }
+        else if quick { quickSwing = swingTask }
+    }
+
+    /// Make `key` the mallet, or have none. False, and nothing changes, if
+    /// another app already holds the key.
+    func useMalletKey(_ key: MalletKey?) -> Bool {
+        guard malletWatcher.watch(key) else {
+            // Put the old key back, unless a new one is being recorded.
+            _ = malletWatcher.watch(recordingMalletKey ? nil : malletKey)
+            return false
+        }
+        malletKey = key
+        if let key { defaults.set(key.stored, forKey: "malletKey") } else { defaults.removeObject(forKey: "malletKey") }
+        return true
+    }
+
+    /// While a new mallet key is being recorded, the old one lets go of its
+    /// key, so pressing it again records it rather than knocking.
+    func holdMalletKey(_ hold: Bool) {
+        recordingMalletKey = !hold
+        typing.skip()
+        _ = malletWatcher.watch(hold ? malletKey : nil)
     }
 
     /// The fish is being moved, not knocked: a swing by hand still in the air
@@ -362,6 +405,25 @@ final class Fish {
             previewAfterSpace = true
         } else {
             knock(byHand: false, preview: true)
+        }
+    }
+
+    /// Knock the ink fish painted on the About scroll: always the ink voice,
+    /// heard through paper, whatever the fish on the desktop wears, and that
+    /// fish's mallet stays still. Like a preview, it always sounds, and a call
+    /// ends: you are here.
+    func knockPainting() {
+        endCall()
+        guard volume > 0 else { return }
+        sound.warm(for: 0)
+        let knock = sound.synthesize(force: 0.58 + .random(in: -0.07...0.07), place: .random(in: -0.2...0.2), voice: "ink")
+        Task {
+            let samples = await knock.value
+            // It rings in the same hall as the desktop fish.
+            let now = ProcessInfo.processInfo.systemUptime
+            let bloom = Self.bloom(afterSilence: now - lastImpact)
+            lastImpact = now
+            sound.play(samples, volume: Float(volume), bloom: Float(bloom))
         }
     }
 
@@ -402,10 +464,10 @@ final class Fish {
         }
     }
 
-    /// Place the knock where the fish sits: `x` runs from 0 at the screen's
-    /// left edge to 1 at its right, `y` from 0 at the bottom to 1 at the top.
-    func heard(at x: Double, _ y: Double) {
-        sound.place(x: Float(x), y: Float(y))
+    /// Place the knock where the fish sits, from the middle of the main
+    /// display: `across` in its widths to the right, `up` in its heights.
+    func heard(across: Double, up: Double) {
+        sound.place(across: Float(across), up: Float(up))
     }
 
     /// The longer the quiet before a knock, the more fully it rings: none of
@@ -420,9 +482,10 @@ final class Fish {
     /// line, on the first knock by hand each day (from 4 a.m.). After the last, it only knocks.
     private func speak() {
         let said = defaults.integer(forKey: "said")
-        let today = Self.today()
         // An unseen fish has no words either; they wait until it is seen.
-        guard placement != .unseen, said < Zen.sayings.count, defaults.string(forKey: "lastSaidDay") != today else { return }
+        guard placement != .unseen, said < Zen.sayings.count else { return }
+        let today = Self.today()
+        guard defaults.string(forKey: "lastSaidDay") != today else { return }
         defaults.set(said + 1, forKey: "said")
         defaults.set(today, forKey: "lastSaidDay")
         let saying = Zen.sayings[said]
@@ -599,22 +662,32 @@ final class Fish {
 
     /// Call you back, as a stick of incense does when it goes out: three
     /// knocks. So they are heard over auto-knock or typing, those keep quiet
-    /// for the call, and the three come after a quiet, which a knock rings
-    /// the fuller for. Auto-knock picks up again after. A call that comes
+    /// for the call, and the three come after a quiet, each ringing in full
+    /// through the hall. Auto-knock picks up again after. A call that comes
     /// while one sounds is the same call. Like auto-knock, it is never answered.
+    /// Once the first knock has sounded, a key or a click anywhere means you
+    /// are back, and the rest of the call keeps quiet. One from before it,
+    /// such as the key that started a build, doesn't count.
     func call() {
         guard callTask == nil else { return }
         autoTask?.cancel()
         autoTask = nil
+        callLanded = .infinity
         callTask = Task { [weak self] in
             for _ in 0..<3 {
                 try? await Task.sleep(for: .seconds(Self.callBeat))
                 guard let self, !Task.isCancelled else { return }
-                strike(byHand: false)
+                let answered = max(TypingWatcher.lastEvent(.keyDown), TypingWatcher.lastEvent(.leftMouseDown))
+                if answered > callLanded { return endCall() }
+                strike(byHand: false, full: true)
+                if callLanded == .infinity {
+                    callLanded = ProcessInfo.processInfo.systemUptime + Self.impactDelay
+                }
             }
             try? await Task.sleep(for: .seconds(Self.callLength - Self.callBeat * 3))
             guard let self, !Task.isCancelled else { return }
             callTask = nil
+            callLanded = .infinity
             restartAuto()
         }
     }
@@ -624,6 +697,7 @@ final class Fish {
         guard let callTask else { return }
         callTask.cancel()
         self.callTask = nil
+        callLanded = .infinity
         restartAuto()
     }
 
@@ -634,6 +708,14 @@ final class Fish {
     /// A key went down, in some app. It knocks, if knocking as you type; and
     /// once you have typed long enough without a rest, the bell knocks instead.
     private func typed() {
+        guard !recordingMalletKey else { return }
+        // A key that went down after the call's first knock means you are
+        // back. When it went down, not when the watcher noticed: for the bell
+        // alone it looks only about once a second, and a key from before the
+        // knock may be noticed after it.
+        if callTask != nil, TypingWatcher.lastEvent(.keyDown) > callLanded {
+            endCall()
+        }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
         if now - lastTyped > Self.rest { typingSince = now }
         lastTyped = now
@@ -709,10 +791,12 @@ final class Fish {
 }
 
 /// The worn skin's knock and the room it rings in. Each knock is synthesized
-/// as the mallet falls, for how hard and where it lands. It comes from where
-/// the fish sits, placed around the listener, and on headphones it is rendered
-/// for the ears. Every knock rings in the one hall, so a run of knocks builds
-/// up in the room the way it would in a temple, rather than each in its own.
+/// as the mallet falls, for how hard and where it lands, and for the hour and
+/// the season. It comes from where the fish sits, placed around the listener,
+/// and on headphones it is rendered for the ears, and stays where the fish
+/// sits as the head turns. Every knock rings in the one hall, so a run of
+/// knocks builds up in the room the way it would in a temple, rather than
+/// each in its own.
 ///
 /// The engine runs only while a knock rings. A running engine holds the audio
 /// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
@@ -730,10 +814,13 @@ final class KnockSound {
     private var voice = ""
     private var space: Float = -1
     private var tail = 3.0
+    /// The hour and the season the last knock was made in.
+    private var warmth: Float = 0
     private var ringsUntil = 0.0
     private var quiet: Task<Void, Never>?
-    /// Where the fish sits on its screen, and whether the knock goes to headphones.
-    private var spot: (x: Float, y: Float) = (0.5, 0.5)
+    /// Where the fish sits, from the middle of the main display, and whether
+    /// the knock goes to headphones.
+    private var spot: (across: Float, up: Float) = (0, 0)
     private var headphones = false
 
     init() {
@@ -775,24 +862,26 @@ final class KnockSound {
         let next = KnockSynth.resolve(name)
         guard next != voice || space != self.space else { return }
         // A new voice keeps the room ringing; only a new room starts it afresh.
-        let room = space != self.space ? KnockSynth.Hall.Room(space: space) : nil
+        let room = space != self.space ? KnockSynth.Hall.Room(space: space, damp: KnockSynth.Hall.damp(warmth: warmth)) : nil
         voice = next
         self.space = space
         if let room { tail = room.tail }
         mix.use(room: room, gain: KnockSynth.Hall.gain(for: KnockSynth.reference(next), space: space))
     }
 
-    /// Where the fish sits on its screen: `x` from 0 at the left edge to 1 at
-    /// the right, `y` from 0 at the bottom to 1 at the top. Not all the way
-    /// round: it is in front of you, a little to one side. Knocks still ringing
-    /// move with it.
-    func place(x: Float, y: Float) {
-        spot = (min(max(x, 0), 1), min(max(y, 0), 1))
+    /// Where the fish sits, from the middle of the main display, which is
+    /// taken to be in front of you: `across` in its widths to the right, `up`
+    /// in its heights. The displays stand in an arc around you, so the main
+    /// display's edges are a little to either side and a display beside it
+    /// further round. Knocks still ringing move with it.
+    func place(across: Float, up: Float) {
+        spot = (across, up)
         // On headphones the knock is rendered for the ears, up and down as well
-        // as across. Speakers get a gentle pan: rendered for ears, a knock at
-        // the screen's edge comes out of one speaker alone.
-        let azimuth = (spot.x * 2 - 1) * (headphones ? 0.7 : 0.25)
-        let elevation = headphones ? (spot.y * 2 - 1) * 0.26 : 0
+        // as across, the main display's edges 40° to either side and 15° up
+        // or down. Speakers get a gentle pan: rendered for ears, a knock at the
+        // screen's edge comes out of one speaker alone.
+        let azimuth = headphones ? atan(2 * tan(0.7) * across) : min(max(0.5 * across, -0.35), 0.35)
+        let elevation = headphones ? atan(2 * tan(0.26) * up) : 0
         dry.position = AVAudio3DPoint(x: sin(azimuth) * cos(elevation), y: sin(elevation),
                                       z: -cos(azimuth) * cos(elevation))
     }
@@ -803,14 +892,20 @@ final class KnockSound {
         headphones = Headphones.inUse()
         environment.outputType = headphones ? .headphones : .externalSpeakers
         dry.renderingAlgorithm = headphones ? .HRTFHQ : .equalPowerPanning
-        place(x: spot.x, y: spot.y)
+        place(across: spot.across, up: spot.up)
     }
 
-    /// Start synthesizing one knock of the worn voice while the mallet falls.
-    func synthesize(force: Float, place: Float) -> Task<[Float], Never> {
-        let voice = voice
+    /// Start synthesizing one knock of the worn voice, or of `voice`, while the
+    /// mallet falls, for the hour and the season, and temper the hall to match.
+    func synthesize(force: Float, place: Float, voice: String? = nil) -> Task<[Float], Never> {
+        let voice = voice ?? self.voice
+        let warmth = KnockSynth.warmth(at: .now)
+        if abs(warmth - self.warmth) > 0.005 {
+            self.warmth = warmth
+            mix.temper(damp: KnockSynth.Hall.damp(warmth: warmth))
+        }
         return Task.detached(priority: .userInitiated) {
-            KnockSynth.knock(voice, force: force, place: place)
+            KnockSynth.knock(voice, force: force, place: place, warmth: warmth)
         }
     }
 
@@ -871,6 +966,7 @@ private final class KnockMix: @unchecked Sendable {
         var spent: [Voice] = []
         var room: KnockSynth.Hall.Room?
         var gain: Float?
+        var damp: Float?
         var oldRoom: KnockSynth.Hall.Room?
     }
 
@@ -907,6 +1003,11 @@ private final class KnockMix: @unchecked Sendable {
             defer { box.oldRoom = nil }
             return box.oldRoom
         }
+    }
+
+    /// Change how much of its highs the hall soaks up, as it rings.
+    func temper(damp: Float) {
+        inbox.withLock { $0.damp = damp }
     }
 
     func add(_ knock: [Float], dry: Float, send: Float) {
@@ -968,6 +1069,10 @@ private final class KnockMix: @unchecked Sendable {
             if let g = box.gain {
                 gain = g
                 box.gain = nil
+            }
+            if let d = box.damp {
+                room.damp = d
+                box.damp = nil
             }
         }
         guard let l = left.mData?.assumingMemoryBound(to: Float.self),
